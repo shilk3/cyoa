@@ -2,15 +2,18 @@ import { useEffect, useState } from 'react';
 
 export type Spacing = 'compact' | 'normal' | 'relaxed';
 export type Margins = 'narrow' | 'normal' | 'wide';
+export type PageWidth = 'standard' | 'wide' | 'full';
 
 export interface LayoutPrefs {
   spacing: Spacing;
   margins: Margins;
+  /** How wide the text column may grow on big screens (phones always use the full width). */
+  width: PageWidth;
 }
 
 const KEY = 'inkbook:layout';
 const EVENT = 'inkbook:layoutchange';
-const DEFAULTS: LayoutPrefs = { spacing: 'normal', margins: 'normal' };
+const DEFAULTS: LayoutPrefs = { spacing: 'normal', margins: 'normal', width: 'wide' };
 
 /** Line height and gap between paragraphs for each spacing choice. */
 export const SPACING: Record<Spacing, { lineHeight: number; paragraphGap: string }> = {
@@ -22,12 +25,16 @@ export const SPACING: Record<Spacing, { lineHeight: number; paragraphGap: string
 /** Space between the text and the screen edges, in px. */
 export const MARGINS: Record<Margins, number> = { narrow: 6, normal: 16, wide: 32 };
 
+/** Maximum text column width on big screens. */
+export const WIDTHS: Record<PageWidth, string> = { standard: '640px', wide: '960px', full: 'none' };
+
 export function getLayoutPrefs(): LayoutPrefs {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? '{}');
     return {
       spacing: v.spacing in SPACING ? v.spacing : DEFAULTS.spacing,
       margins: v.margins in MARGINS ? v.margins : DEFAULTS.margins,
+      width: v.width in WIDTHS ? v.width : DEFAULTS.width,
     };
   } catch {
     return DEFAULTS;
@@ -61,5 +68,6 @@ export function layoutStyle(p: LayoutPrefs): Record<string, string | number> {
     '--story-leading': SPACING[p.spacing].lineHeight,
     '--story-gap': SPACING[p.spacing].paragraphGap,
     '--page-margin': `${MARGINS[p.margins]}px`,
+    '--page-width': WIDTHS[p.width],
   };
 }

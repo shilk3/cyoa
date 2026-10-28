@@ -31,6 +31,14 @@ export function LayoutPicker() {
         options={[['narrow', 'Narrow'], ['normal', 'Normal'], ['wide', 'Wide']]}
         onChange={(margins) => update({ margins })}
       />
+      <div className="big-screen-only">
+        <Segmented
+          label="Page width"
+          value={prefs.width}
+          options={[['standard', 'Standard'], ['wide', 'Wide'], ['full', 'Full']]}
+          onChange={(width) => update({ width })}
+        />
+      </div>
     </>
   );
 }

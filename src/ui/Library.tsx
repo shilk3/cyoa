@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { Book, Progress } from '../book/types';
 import { listBooks, deleteBook, getProgress, getSave, getPosition, putBook } from '../storage/db';
 import { isEpub } from '../book/types';
@@ -8,7 +8,7 @@ import { ToolButton } from './icons';
 import { DropPanel } from './DropPanel';
 import { ThemePicker } from './ThemePicker';
 import { useThemePref } from './theme';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 import { isUnlocked, lockAvailable, lockIsSetUp, onLockChange, setUpLock, unlockBook, verifyUser, LockError } from '../security/faceLock';
 
 // Import/export code includes the ink compiler; load it only when needed.
@@ -202,7 +202,9 @@ function BookCard({ entry, canLock, guarded, onToggleLock, onExport, onDelete }:
           <p className="muted small">Open with Face ID</p>
           <div className="card-actions">
             <button className="btn small primary" onClick={read} disabled={!readable}>Open</button>
-            <button className="btn small ghost danger" onClick={guarded(onDelete)} aria-label="Delete locked book">Delete</button>
+            <CardMenu label="More actions for locked book">
+              <MenuItem icon="trash" danger onClick={guarded(onDelete)} label="Delete locked book">Delete</MenuItem>
+            </CardMenu>
           </div>
         </div>
       </li>
@@ -242,18 +244,52 @@ function BookCard({ entry, canLock, guarded, onToggleLock, onExport, onDelete }:
           <button className="btn small primary" onClick={read} disabled={!readable}>
             {started ? 'Continue' : 'Read'}
           </button>
-          {book.source != null && <button className="btn small" onClick={() => navigate(`#/write/${id}`)}>Edit</button>}
-          <button className="btn small" onClick={onExport}>Export</button>
-          {canLock && (
-            <button className="btn small" onClick={onToggleLock} aria-label={book.locked ? `Remove Face ID lock from ${m.title}` : `Lock ${m.title} with Face ID`}>
-              <Icon name={book.locked ? 'unlock' : 'lock'} />
-              {book.locked ? 'Remove lock' : 'Lock'}
-            </button>
-          )}
-          <button className="btn small ghost danger" onClick={onDelete} aria-label={`Delete ${m.title}`}>Delete</button>
+          <CardMenu label={`More actions for ${m.title}`}>
+            {book.source != null && <MenuItem icon="edit" onClick={() => navigate(`#/write/${id}`)}>Edit</MenuItem>}
+            <MenuItem icon="export" onClick={onExport}>Export</MenuItem>
+            {canLock && (
+              <MenuItem
+                icon={book.locked ? 'unlock' : 'lock'}
+                onClick={onToggleLock}
+                label={book.locked ? `Remove Face ID lock from ${m.title}` : `Lock ${m.title} with Face ID`}
+              >
+                {book.locked ? 'Remove lock' : 'Lock with Face ID'}
+              </MenuItem>
+            )}
+            <MenuItem icon="trash" danger onClick={onDelete} label={`Delete ${m.title}`}>Delete</MenuItem>
+          </CardMenu>
         </div>
       </div>
     </li>
+  );
+}
+
+/** "⋯" button that opens a small menu of less-used actions. Tapping an item or outside closes it. */
+function CardMenu({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="card-menu">
+      <button className="btn small card-more" aria-label={label} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name="more" />
+      </button>
+      {open && (
+        <>
+          <div className="menu-backdrop" onClick={() => setOpen(false)} />
+          <div className="menu" role="menu" onClick={() => setOpen(false)}>
+            {children}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({ icon, onClick, label, danger, children }: { icon: IconName; onClick: () => void; label?: string; danger?: boolean; children: ReactNode }) {
+  return (
+    <button role="menuitem" className={`menu-item ${danger ? 'danger' : ''}`} onClick={onClick} aria-label={label}>
+      <Icon name={icon} />
+      {children}
+    </button>
   );
 }
 
