@@ -1,5 +1,9 @@
 # cyoa-reader architecture (Ink-based)
 
+The app is implemented in `src/`: `ink/` (compiler wrapper, engine, reading session), `book/`
+(`.inkbook` format, library operations), `export/` (HTML, EPUB, story flattener), `storage/`
+(IndexedDB) and `ui/` (React views: Library, Reader, Writer).
+
 ## Overview
 
 ```
@@ -122,7 +126,33 @@ open book → load autosave? ──yes──▶ engine.loadState()
         (no choices left → ending screen, record ending tag)
 ```
 
-## 4. Build tooling
+## 4. Writer
+
+The writer edits a book's `source` in a CodeMirror editor. After a short pause in typing it
+recompiles with the inkjs compiler, which runs in the browser:
+
+- Errors and warnings appear inline and in the Problems tab.
+- If the source compiles, `storyJson` is replaced and `storyRevision` is increased.
+- If it doesn't compile, the last working `storyJson` is kept, so the book stays readable.
+
+The preview is a `ReaderSession` that restarts whenever the compiled story changes.
+
+The writer, the compiler and the exporters are loaded only when needed, so the reader stays small.
+
+## 5. Exports
+
+`.inkbook` (with or without source), standalone `.html` (embeds the inkjs runtime and
+a small player), `.epub`, `.ink` and `.json`.
+
+EPUB export (`export/flatten.ts`) does a breadth-first search over every choice point:
+
+- Each distinct state becomes a numbered section, and each choice becomes a link.
+- A state is identified by its text plus the ink state, after removing turn counters and
+  thread ids.
+- Identical states reached by different routes share a section.
+- Export stops after 1500 sections.
+
+## 6. Build tooling (not yet implemented)
 
 `tools/build-book` (Node script):
 1. Compile `.ink` with the inkjs compiler (`inkjs/full`), fail on errors/warnings.
@@ -131,8 +161,8 @@ open book → load autosave? ──yes──▶ engine.loadState()
 4. Optional: a "playthrough lint" that walks random choices N times to catch
    dead ends (states with no choices and no `# ending` tag).
 
-## 5. Possible later additions
+## 7. Possible later additions
 
-- EPUB export: for linear-branching stories, unroll knots into linked EPUB
-  sections so books also work on ordinary e-readers (state-heavy books won't).
+- Compile in a Web Worker for very large stories.
+- Multi-file ink projects (`INCLUDE`).
 - Mobile wrapper (Capacitor) if app-store distribution is wanted.
