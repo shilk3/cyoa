@@ -9,6 +9,7 @@ Everything runs in the browser. Books are stored on your device in IndexedDB, an
 **Library**
 - Import `.epub`, `.inkbook`, `.ink` or compiled ink `.json` files, either with the file picker or by dropping them on the page
 - Shows covers, reading progress and how many endings you've found
+- **Face ID lock** for individual books: a locked book's cover and title are hidden, and it needs Face ID (or Touch ID, or the device passcode) to open, edit, export or delete. Books re-lock whenever the app goes to the background. This is a privacy lock, not encryption, so a lost passkey can never cost you a book: use *Set up Face ID again* on the lock screen.
 
 **Reader**
 - Shows each passage with its choices; your place is saved automatically after every choice

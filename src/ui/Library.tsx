@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import type { Book, Progress } from '../book/types';
-import { listBooks, deleteBook, getProgress, getSave, getPosition } from '../storage/db';
+import { listBooks, deleteBook, getProgress, getSave, getPosition, putBook } from '../storage/db';
 import { isEpub } from '../book/types';
 import { useObjectUrl } from './hooks';
 import { navigate, pickFiles } from './util';
@@ -8,6 +8,8 @@ import { ToolButton } from './icons';
 import { DropPanel } from './DropPanel';
 import { ThemePicker } from './ThemePicker';
 import { useThemePref } from './theme';
+import { Icon } from './icons';
+import { isUnlocked, lockAvailable, lockIsSetUp, onLockChange, setUpLock, unlockBook, verifyUser, LockError } from '../security/faceLock';
 
 // Import/export code includes the ink compiler; load it only when needed.
 const ops = () => import('../book/ops');
@@ -26,6 +28,38 @@ export function Library() {
   const [exporting, setExporting] = useState<Book | null>(null);
   const [dragging, setDragging] = useState(false);
   const [showTheme, setShowTheme] = useState(false);
+  const [canLock, setCanLock] = useState(false);
+  const [, setLockTick] = useState(0);
+  useEffect(() => {
+    void lockAvailable().then(setCanLock);
+    return onLockChange(() => setLockTick((t) => t + 1));
+  }, []);
+
+  /** Runs `fn` after Face ID when the book is locked and not yet open in this session. */
+  const guarded = (b: Book, fn: () => void | Promise<void>) => async () => {
+    setError(null);
+    try {
+      if (b.locked && !isUnlocked(b.id)) await unlockBook(b.id);
+      await fn();
+    } catch (e) {
+      setError(e instanceof LockError ? e.message : (e as Error).message);
+    }
+  };
+
+  const toggleLock = (b: Book) => async () => {
+    setError(null);
+    try {
+      if (b.locked) {
+        await verifyUser();
+      } else if (!lockIsSetUp()) {
+        await setUpLock();
+      }
+      await putBook({ ...b, locked: !b.locked });
+      await refresh();
+    } catch (e) {
+      setError(e instanceof LockError ? e.message : (e as Error).message);
+    }
+  };
   const [themePref] = useThemePref();
   const themeIcon = themePref === 'dark' ? 'moon' : themePref === 'light' ? 'sun' : 'system';
 
@@ -114,7 +148,15 @@ export function Library() {
         ) : (
           <ul className="shelf">
             {entries.map((e) => (
-              <BookCard key={e.book.id} entry={e} onExport={() => setExporting(e.book)} onDelete={() => onDelete(e.book)} />
+              <BookCard
+                key={e.book.id}
+                entry={e}
+                canLock={canLock}
+                guarded={(fn) => guarded(e.book, fn)}
+                onToggleLock={toggleLock(e.book)}
+                onExport={() => setExporting(e.book)}
+                onDelete={() => onDelete(e.book)}
+              />
             ))}
           </ul>
         )}
@@ -128,15 +170,48 @@ export function Library() {
   );
 }
 
-function BookCard({ entry, onExport, onDelete }: { entry: Entry; onExport: () => void; onDelete: () => void }) {
+interface CardProps {
+  entry: Entry;
+  canLock: boolean;
+  guarded: (fn: () => void | Promise<void>) => () => Promise<void>;
+  onToggleLock: () => void;
+  onExport: () => void;
+  onDelete: () => void;
+}
+
+function BookCard({ entry, canLock, guarded, onToggleLock, onExport, onDelete }: CardProps) {
   const { book, progress, started, percent } = entry;
   const readable = isEpub(book) || !!book.storyJson;
   const cover = useObjectUrl(book.cover);
   const id = encodeURIComponent(book.id);
   const m = book.manifest;
+  const read = guarded(() => navigate(`#/read/${id}`));
+
+  // Locked and not opened since the app was last in the background: show nothing about the book.
+  if (book.locked && !isUnlocked(book.id)) {
+    return (
+      <li className="card">
+        <button className="cover" onClick={read} aria-label="Open locked book with Face ID">
+          <span className="cover-locked">
+            <Icon name="lock" />
+            <span>Locked</span>
+          </span>
+        </button>
+        <div className="card-body">
+          <h3>Locked book</h3>
+          <p className="muted small">Open with Face ID</p>
+          <div className="card-actions">
+            <button className="btn small primary" onClick={read} disabled={!readable}>Open</button>
+            <button className="btn small ghost danger" onClick={guarded(onDelete)} aria-label="Delete locked book">Delete</button>
+          </div>
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li className="card">
-      <button className="cover" onClick={() => navigate(`#/read/${id}`)} aria-label={`Read ${m.title}`}>
+      <button className="cover" onClick={read} aria-label={`Read ${m.title}`}>
         {cover ? (
           <img src={cover} alt="" />
         ) : (
@@ -164,11 +239,17 @@ function BookCard({ entry, onExport, onDelete }: { entry: Entry; onExport: () =>
           {progress.endings.length > 0 && ` · ${progress.endings.length} ending${progress.endings.length === 1 ? '' : 's'} found`}
         </p>
         <div className="card-actions">
-          <button className="btn small primary" onClick={() => navigate(`#/read/${id}`)} disabled={!readable}>
+          <button className="btn small primary" onClick={read} disabled={!readable}>
             {started ? 'Continue' : 'Read'}
           </button>
           {book.source != null && <button className="btn small" onClick={() => navigate(`#/write/${id}`)}>Edit</button>}
           <button className="btn small" onClick={onExport}>Export</button>
+          {canLock && (
+            <button className="btn small" onClick={onToggleLock} aria-label={book.locked ? `Remove Face ID lock from ${m.title}` : `Lock ${m.title} with Face ID`}>
+              <Icon name={book.locked ? 'unlock' : 'lock'} />
+              {book.locked ? 'Remove lock' : 'Lock'}
+            </button>
+          )}
           <button className="btn small ghost danger" onClick={onDelete} aria-label={`Delete ${m.title}`}>Delete</button>
         </div>
       </div>

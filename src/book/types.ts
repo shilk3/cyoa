@@ -35,6 +35,8 @@ export interface Book {
   source: string | null;
   cover: Blob | null;
   assets: Asset[];
+  /** Needs Face ID to open on this device. Not part of the book file, so exports never carry it. */
+  locked?: boolean;
 }
 
 export interface SaveGame {
