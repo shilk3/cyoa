@@ -7,6 +7,7 @@ import { StoryView } from './StoryView';
 import { navigate } from './util';
 import { LibraryButton } from './LibraryButton';
 import { ToolButton } from './icons';
+import { DropPanel } from './DropPanel';
 import { ThemePicker } from './ThemePicker';
 import { useStoredNumber } from './hooks';
 
@@ -164,55 +165,57 @@ export function Reader({ bookId }: { bookId: string }) {
 
   return (
     <div className="reader">
-      <header className="toolbar">
-        <LibraryButton />
-        <h1 className="toolbar-title">{book.manifest.title}</h1>
-        <div className="toolbar-actions">
-          <ToolButton icon="undo" label="Back" onClick={undo} disabled={!s?.canUndo} />
-          <ToolButton icon="restart" label="Restart" onClick={restart} disabled={!s} />
-          <ToolButton icon="bookmark" label="Bookmarks" active={panel === 'bookmarks'} onClick={() => togglePanel('bookmarks')} />
-          <ToolButton icon="stats" label="Stats" active={panel === 'stats'} onClick={() => togglePanel('stats')} />
-          <ToolButton icon="display" label="Display" active={panel === 'display'} onClick={() => togglePanel('display')} />
-          {book.source != null && <ToolButton icon="edit" label="Edit" onClick={() => navigate(`#/write/${encodeURIComponent(book.id)}`)} />}
-        </div>
-      </header>
-
-      {panel === 'display' && (
-        <aside className="panel">
-          <ThemePicker />
-          <div className="setting-row">
-            <span>Text size</span>
-            <button className="btn" onClick={() => setTextSize(textSize - 10)} disabled={textSize <= 70} aria-label="Smaller text">A−</button>
-            <span className="muted small">{textSize}%</span>
-            <button className="btn" onClick={() => setTextSize(textSize + 10)} disabled={textSize >= 200} aria-label="Larger text">A+</button>
+      <div className="top-bar">
+        <header className="toolbar">
+          <LibraryButton />
+          <h1 className="toolbar-title">{book.manifest.title}</h1>
+          <div className="toolbar-actions">
+            <ToolButton icon="undo" label="Back" onClick={undo} disabled={!s?.canUndo} />
+            <ToolButton icon="restart" label="Restart" onClick={restart} disabled={!s} />
+            <ToolButton icon="bookmark" label="Bookmarks" active={panel === 'bookmarks'} onClick={() => togglePanel('bookmarks')} />
+            <ToolButton icon="stats" label="Stats" active={panel === 'stats'} onClick={() => togglePanel('stats')} />
+            <ToolButton icon="display" label="Display" active={panel === 'display'} onClick={() => togglePanel('display')} />
+            {book.source != null && <ToolButton icon="edit" label="Edit" onClick={() => navigate(`#/write/${encodeURIComponent(book.id)}`)} />}
           </div>
-        </aside>
-      )}
+        </header>
 
-      {panel === 'bookmarks' && (
-        <aside className="panel">
-          <button className="btn primary" onClick={addBookmark} disabled={!s}>Bookmark this page</button>
-          {bookmarks.length === 0 ? (
-            <p className="muted">No bookmarks yet. Bookmark a page before a big decision so you can come back to it.</p>
-          ) : (
-            <ul className="bookmark-list">
-              {bookmarks.map((bm) => (
-                <li key={bm.slot}>
-                  <button className="link" onClick={() => loadBookmark(bm)}>{bm.slot.replace(/^bm:/, '')}</button>
-                  <span className="muted small">{new Date(bm.updated).toLocaleString()}</span>
-                  <button className="btn ghost small" onClick={() => removeBookmark(bm)} aria-label="Delete bookmark">✕</button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </aside>
-      )}
+        {panel === 'display' && (
+          <DropPanel onClose={() => setPanel('none')}>
+            <ThemePicker />
+            <div className="setting-row">
+              <span>Text size</span>
+              <button className="btn" onClick={() => setTextSize(textSize - 10)} disabled={textSize <= 70} aria-label="Smaller text">A−</button>
+              <span className="muted small">{textSize}%</span>
+              <button className="btn" onClick={() => setTextSize(textSize + 10)} disabled={textSize >= 200} aria-label="Larger text">A+</button>
+            </div>
+          </DropPanel>
+        )}
 
-      {panel === 'stats' && s && (
-        <aside className="panel">
-          <VariablesTable vars={s.engine.variables} />
-        </aside>
-      )}
+        {panel === 'bookmarks' && (
+          <DropPanel onClose={() => setPanel('none')}>
+            <button className="btn primary" onClick={addBookmark} disabled={!s}>Bookmark this page</button>
+            {bookmarks.length === 0 ? (
+              <p className="muted">No bookmarks yet. Bookmark a page before a big decision so you can come back to it.</p>
+            ) : (
+              <ul className="bookmark-list">
+                {bookmarks.map((bm) => (
+                  <li key={bm.slot}>
+                    <button className="link" onClick={() => loadBookmark(bm)}>{bm.slot.replace(/^bm:/, '')}</button>
+                    <span className="muted small">{new Date(bm.updated).toLocaleString()}</span>
+                    <button className="btn ghost small" onClick={() => removeBookmark(bm)} aria-label="Delete bookmark">✕</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DropPanel>
+        )}
+
+        {panel === 'stats' && s && (
+          <DropPanel onClose={() => setPanel('none')}>
+            <VariablesTable vars={s.engine.variables} />
+          </DropPanel>
+        )}
+      </div>
 
       <main className="page" style={{ ['--story-scale' as string]: textSize / 100 }}>
         {!book.storyJson ? (
