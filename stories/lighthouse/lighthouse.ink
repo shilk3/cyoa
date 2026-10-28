@@ -95,17 +95,15 @@ At dawn, you learn the evening boat ran aground. Everyone made it ashore, but th
 === good_ending ===
 # ending: good
 In the morning the fishermen climb the hill to shake your hand. Abernathy offers you the job. You say yes.
-THE END
 -> END
 
 === uncertain_ending ===
 # ending: neutral
 You stand by the lamp until dawn, willing it to burn. When the storm clears, the boat is tied up safe in the harbour — though the skipper says it was a close thing.
 Maybe next time, check the boathouse for more oil.
-THE END
 -> END
 
 === bad_ending ===
 # ending: bad
-THE END
+The lighthouse stays dark for the rest of the season.
 -> END
