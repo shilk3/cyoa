@@ -7,6 +7,8 @@ import { ToolButton } from './icons';
 import { DropPanel } from './DropPanel';
 import { ThemePicker } from './ThemePicker';
 import { onThemeChange } from './theme';
+import { MARGINS, SPACING, useLayoutPrefs, type LayoutPrefs } from './layoutPrefs';
+import { LayoutPicker } from './LayoutPicker';
 
 type Flow = 'paginated' | 'scrolled-doc';
 
@@ -33,12 +35,25 @@ function savePrefs(p: Prefs) {
   }
 }
 
-/** Colours for the book's iframe, taken from the app's theme so dark mode applies inside the book too. */
-function themeRules() {
+/**
+ * Styles injected into the book's iframe: the app's theme colours (so dark mode applies inside
+ * the book too) and the reader's line-spacing choice. In scroll layout the side margins are body
+ * padding; in page layout epub.js manages body padding itself, so margins come from its `gap`.
+ */
+function themeRules(layout: LayoutPrefs, flow: Flow) {
   const css = getComputedStyle(document.documentElement);
   const v = (name: string) => css.getPropertyValue(name).trim();
+  const { lineHeight, paragraphGap } = SPACING[layout.spacing];
+  const body: Record<string, string> = {
+    color: `${v('--fg')} !important`,
+    background: `${v('--bg')} !important`,
+    'line-height': `${lineHeight} !important`,
+  };
+  if (flow === 'scrolled-doc') body.padding = `0 ${MARGINS[layout.margins]}px !important`;
   return {
-    body: { color: `${v('--fg')} !important`, background: `${v('--bg')} !important` },
+    body,
+    'p, li, blockquote, div': { 'line-height': `${lineHeight} !important` },
+    p: { 'margin-top': '0 !important', 'margin-bottom': `${paragraphGap} !important` },
     'a, a:link, a:visited': { color: `${v('--accent')} !important` },
   };
 }
@@ -50,6 +65,9 @@ export function EpubReader({ book }: { book: Book }) {
   const [toc, setToc] = useState<NavItem[]>([]);
   const [panel, setPanel] = useState<'none' | 'toc' | 'settings'>('none');
   const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
+  const [layout] = useLayoutPrefs();
+  const layoutRef = useRef(layout);
+  layoutRef.current = layout;
   const [percent, setPercent] = useState<number | null>(null);
   const [chapter, setChapter] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -68,15 +86,18 @@ export function EpubReader({ book }: { book: Book }) {
       try {
         epub = ePub(await book.epub!.arrayBuffer());
         epubRef.current = epub;
+        // `gap` is a real epub.js option that its type definitions leave out.
         rendition = epub.renderTo(el, {
           width: '100%',
           height: '100%',
           flow: prefs.flow,
           spread: 'none',
+          // Space between pages; half of it shows at each side of the text.
+          gap: MARGINS[layout.margins] * 2,
           allowScriptedContent: false,
-        });
+        } as Parameters<EpubBook['renderTo']>[1]);
         renditionRef.current = rendition;
-        rendition.themes.register('app', themeRules());
+        rendition.themes.register('app', themeRules(layoutRef.current, prefs.flow));
         rendition.themes.select('app');
         rendition.themes.fontSize(`${prefs.fontSize}%`);
 
@@ -155,26 +176,25 @@ export function EpubReader({ book }: { book: Book }) {
       renditionRef.current = null;
       epubRef.current = null;
     };
-    // Font size is applied live below; only layout changes need a fresh rendition.
+    // Font size, colours and spacing are applied live below; layout and margin changes need a
+    // fresh rendition (epub.js only reads its page gap when it starts).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [book.id, book.epub, prefs.flow]);
+  }, [book.id, book.epub, prefs.flow, layout.margins]);
 
   useEffect(() => {
     renditionRef.current?.themes.fontSize(`${prefs.fontSize}%`);
     savePrefs(prefs);
   }, [prefs]);
 
-  // Recolour the book when the theme changes (from the picker or the system setting).
-  useEffect(
-    () =>
-      onThemeChange(() => {
-        const r = renditionRef.current;
-        if (!r) return;
-        r.themes.register('app', themeRules());
-        r.themes.select('app');
-      }),
-    [],
-  );
+  // Restyle the book when the theme (picker or system setting) or line spacing changes.
+  const restyle = () => {
+    const r = renditionRef.current;
+    if (!r) return;
+    r.themes.register('app', themeRules(layoutRef.current, prefs.flow));
+    r.themes.select('app');
+  };
+  useEffect(() => onThemeChange(restyle));
+  useEffect(restyle, [layout.spacing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft' || e.key === 'PageUp') void renditionRef.current?.prev();
@@ -210,6 +230,7 @@ export function EpubReader({ book }: { book: Book }) {
         {panel === 'settings' && (
           <DropPanel onClose={() => setPanel('none')}>
             <ThemePicker />
+            <LayoutPicker />
             <div className="setting-row">
               <span>Text size</span>
               <button className="btn" onClick={() => setPrefs({ ...prefs, fontSize: Math.max(70, prefs.fontSize - 10) })} aria-label="Smaller text">A−</button>
@@ -228,7 +249,7 @@ export function EpubReader({ book }: { book: Book }) {
       {error ? (
         <div className="empty-state"><p className="error-box">{error}</p></div>
       ) : (
-        <div className={`ebook-stage flow-${prefs.flow}`}>
+        <div className={`ebook-stage flow-${prefs.flow}`} style={{ ['--page-margin' as string]: `${MARGINS[layout.margins]}px` }}>
           <div className="ebook-host" ref={host} />
         </div>
       )}
