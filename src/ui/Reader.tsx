@@ -9,6 +9,8 @@ import { LibraryButton } from './LibraryButton';
 import { ToolButton } from './icons';
 import { DropPanel } from './DropPanel';
 import { ThemePicker } from './ThemePicker';
+import { layoutStyle, useLayoutPrefs } from './layoutPrefs';
+import { LayoutPicker } from './LayoutPicker';
 import { useStoredNumber } from './hooks';
 
 const AUTO = 'auto';
@@ -25,6 +27,7 @@ export function Reader({ bookId }: { bookId: string }) {
   const [panel, setPanel] = useState<'none' | 'bookmarks' | 'stats' | 'display'>('none');
   const togglePanel = (p: typeof panel) => setPanel(panel === p ? 'none' : p);
   const [textSize, setTextSize] = useStoredNumber('inkbook:ink-text-size', 100);
+  const [layout] = useLayoutPrefs();
   const [bookmarks, setBookmarks] = useState<SaveGame[]>([]);
   const assetUrls = useAssetUrls(book?.assets);
   const rerender = () => setTick((t) => t + 1);
@@ -182,6 +185,7 @@ export function Reader({ bookId }: { bookId: string }) {
         {panel === 'display' && (
           <DropPanel onClose={() => setPanel('none')}>
             <ThemePicker />
+            <LayoutPicker />
             <div className="setting-row">
               <span>Text size</span>
               <button className="btn" onClick={() => setTextSize(textSize - 10)} disabled={textSize <= 70} aria-label="Smaller text">A−</button>
@@ -217,7 +221,7 @@ export function Reader({ bookId }: { bookId: string }) {
         )}
       </div>
 
-      <main className="page" style={{ ['--story-scale' as string]: textSize / 100 }}>
+      <main className="page" style={{ ['--story-scale' as string]: textSize / 100, ...layoutStyle(layout) }}>
         {!book.storyJson ? (
           <div className="empty-state">
             <p>This book doesn't compile yet, so there's nothing to read.</p>

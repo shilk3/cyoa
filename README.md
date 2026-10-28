@@ -25,7 +25,7 @@ Everything runs in the browser. Books are stored on your device in IndexedDB, an
 
 **Display**
 - Light and dark themes, or follow your phone's or computer's setting (the default)
-- Text size for both kinds of book
+- Text size, line spacing (Compact, Normal, Relaxed) and margins (Narrow, Normal, Wide) for both kinds of book
 - On phones the toolbar shows icons only, so it fits on one line
 
 **Writer**
