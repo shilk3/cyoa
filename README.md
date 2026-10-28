@@ -1,13 +1,13 @@
 # cyoa-reader (Inkbook)
 
-Read, write and export choose-your-own-adventure books written in [ink](https://www.inklestudios.com/ink/).
+Read, write and export choose-your-own-adventure books written in [ink](https://www.inklestudios.com/ink/), and read ordinary EPUB e-books too.
 
-Everything runs in the browser. Books are stored locally in IndexedDB, and no server is needed.
+Everything runs in the browser. Books are stored on your device in IndexedDB, and no server is needed. You can install it to your phone's home screen, and it works offline.
 
 ## Features
 
 **Library**
-- Import `.inkbook`, `.ink` or compiled ink `.json` files, either with the file picker or by dropping them on the page
+- Import `.epub`, `.inkbook`, `.ink` or compiled ink `.json` files, either with the file picker or by dropping them on the page
 - Shows covers, reading progress and how many endings you've found
 
 **Reader**
@@ -16,6 +16,12 @@ Everything runs in the browser. Books are stored locally in IndexedDB, and no se
 - Named bookmarks
 - A stats panel showing the story's variables
 - Supports images, chapters, page clears and endings marked with tags
+
+**E-book reader** (standard `.epub` files)
+- Turn pages with a swipe, by tapping the left or right edge, with the arrow buttons, or with the arrow keys
+- Switch between page and scroll layout, and change the text size
+- Table of contents, chapter name and percentage read
+- Your position is saved automatically, and dark mode follows your system setting
 
 **Writer**
 - Ink editor with syntax highlighting
@@ -49,6 +55,16 @@ EPUB export works by exploring every reachable state of the story. Stories whose
 # class: whisper          style the line
 # ending: good            mark an ending (counted in the library)
 ```
+
+## Using it on your phone
+
+The app is published to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`.
+
+1. Open https://shilk3.github.io/cyoa-reader/ in Safari (iPhone) or Chrome (Android).
+2. Add it to your home screen: on iPhone, tap Share, then **Add to Home Screen**; on Android, open the menu and tap **Install app**.
+3. Import books with **Import…**, which opens the Files app. Exports open the share sheet, where you can choose **Save to Files**.
+
+Books are stored on the device, so each phone or browser has its own library. Use `.inkbook` export and import to move books between devices.
 
 ## Development
 

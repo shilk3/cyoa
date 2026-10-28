@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import type { Book } from '../book/types';
-import { EXPORTS, exportBook, type ExportKind } from '../book/ops';
-import { downloadBlob, slugify } from './util';
+import { isEpub, type Book } from '../book/types';
+import { exportsFor, exportBook, type ExportKind } from '../book/ops';
+import { saveFile, slugify } from './util';
 
 export function ExportDialog({ book, onClose }: { book: Book; onClose: () => void }) {
   const [busy, setBusy] = useState<ExportKind | null>(null);
@@ -12,7 +12,7 @@ export function ExportDialog({ book, onClose }: { book: Book; onClose: () => voi
     setError(null);
     try {
       const blob = await exportBook(book, kind);
-      downloadBlob(blob, `${slugify(book.manifest.title)}.${ext}`);
+      await saveFile(blob, `${slugify(book.manifest.title)}.${ext}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -27,11 +27,11 @@ export function ExportDialog({ book, onClose }: { book: Book; onClose: () => voi
           <h2>Export “{book.manifest.title}”</h2>
           <button className="btn ghost" onClick={onClose} aria-label="Close">✕</button>
         </div>
-        {!book.storyJson && <p className="error-box">This book doesn't compile yet. Fix the errors in the writer first.</p>}
+        {!book.storyJson && !isEpub(book) && <p className="error-box">This book doesn't compile yet. Fix the errors in the writer first.</p>}
         <ul className="export-list">
-          {EXPORTS.filter((x) => !x.needsSource || book.source != null).map((x) => (
+          {exportsFor(book).map((x) => (
             <li key={x.kind}>
-              <button className="export-item" disabled={!book.storyJson || busy !== null} onClick={() => run(x.kind, x.ext)}>
+              <button className="export-item" disabled={(!book.storyJson && !isEpub(book)) || busy !== null} onClick={() => run(x.kind, x.ext)}>
                 <span className="export-label">{busy === x.kind ? 'Exporting…' : x.label}</span>
                 <span className="muted small">{x.hint}</span>
               </button>

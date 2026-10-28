@@ -1,21 +1,25 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Book, Progress, SaveGame } from '../book/types';
+import type { Book, EpubPosition, Progress, SaveGame } from '../book/types';
 
 interface CyoaDB extends DBSchema {
   books: { key: string; value: Book };
   saves: { key: [string, string]; value: SaveGame; indexes: { byBook: string } };
   progress: { key: string; value: Progress };
+  positions: { key: string; value: EpubPosition };
 }
 
 let dbPromise: Promise<IDBPDatabase<CyoaDB>> | null = null;
 
 function db() {
-  dbPromise ??= openDB<CyoaDB>('cyoa-reader', 1, {
-    upgrade(d) {
-      d.createObjectStore('books', { keyPath: 'id' });
-      const saves = d.createObjectStore('saves', { keyPath: ['bookId', 'slot'] });
-      saves.createIndex('byBook', 'bookId');
-      d.createObjectStore('progress', { keyPath: 'bookId' });
+  dbPromise ??= openDB<CyoaDB>('cyoa-reader', 2, {
+    upgrade(d, oldVersion) {
+      if (oldVersion < 1) {
+        d.createObjectStore('books', { keyPath: 'id' });
+        const saves = d.createObjectStore('saves', { keyPath: ['bookId', 'slot'] });
+        saves.createIndex('byBook', 'bookId');
+        d.createObjectStore('progress', { keyPath: 'bookId' });
+      }
+      if (oldVersion < 2) d.createObjectStore('positions', { keyPath: 'bookId' });
     },
   });
   return dbPromise;
@@ -36,11 +40,12 @@ export async function putBook(book: Book): Promise<void> {
 
 export async function deleteBook(id: string): Promise<void> {
   const d = await db();
-  const tx = d.transaction(['books', 'saves', 'progress'], 'readwrite');
+  const tx = d.transaction(['books', 'saves', 'progress', 'positions'], 'readwrite');
   await tx.objectStore('books').delete(id);
   const saveKeys = await tx.objectStore('saves').index('byBook').getAllKeys(id);
   for (const k of saveKeys) await tx.objectStore('saves').delete(k);
   await tx.objectStore('progress').delete(id);
+  await tx.objectStore('positions').delete(id);
   await tx.done;
 }
 
@@ -69,4 +74,12 @@ export async function recordEnding(bookId: string, ending: string): Promise<Prog
   if (!p.endings.includes(ending)) p.endings.push(ending);
   await (await db()).put('progress', p);
   return p;
+}
+
+export async function getPosition(bookId: string): Promise<EpubPosition | undefined> {
+  return (await db()).get('positions', bookId);
+}
+
+export async function putPosition(pos: EpubPosition): Promise<void> {
+  await (await db()).put('positions', pos);
 }

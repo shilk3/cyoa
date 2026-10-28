@@ -22,9 +22,14 @@ export interface Asset {
   data: Blob;
 }
 
-/** A book as stored in the library. `source` is present for books that can be edited. */
+/**
+ * A book as stored in the library. Ink books have `storyJson` (and `source` when editable);
+ * standard e-books have `kind: 'epub'` and keep the original file in `epub`.
+ */
 export interface Book {
   id: string;
+  kind?: 'ink' | 'epub'; // missing on books saved before EPUB support: treat as 'ink'
+  epub?: Blob | null;
   manifest: Manifest;
   storyJson: string | null;
   source: string | null;
@@ -57,3 +62,13 @@ export interface Progress {
   bookId: string;
   endings: string[]; // ending tag values discovered
 }
+
+/** Reading position in a standard EPUB. */
+export interface EpubPosition {
+  bookId: string;
+  cfi: string;
+  percent: number | null;
+  updated: string;
+}
+
+export const isEpub = (b: Book) => b.kind === 'epub';

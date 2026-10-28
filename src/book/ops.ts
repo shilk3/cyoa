@@ -1,7 +1,8 @@
 import { compileInk, type CompileResult } from '../ink/compile';
 import { metaFromGlobalTags } from '../ink/tags';
 import { newManifest, unpackInkbook, packInkbook, InkbookError } from './inkbook';
-import type { Book } from './types';
+import { bookFromEpub } from './epubImport';
+import { isEpub, type Book } from './types';
 import { putBook } from '../storage/db';
 
 export const NEW_BOOK_TEMPLATE = `# title: My Adventure
@@ -54,13 +55,15 @@ export async function createNewBook(): Promise<Book> {
   return book;
 }
 
-/** Imports a .inkbook, .ink or compiled ink .json file into the library. */
+/** Imports a .inkbook, .ink, compiled ink .json or standard .epub file into the library. */
 export async function importFile(file: File): Promise<Book> {
   const name = file.name.toLowerCase();
   let book: Book;
   if (name.endsWith('.inkbook') || name.endsWith('.zip')) {
     // Re-importing a book with the same id replaces it; saves are keyed by id so progress is kept.
     book = await unpackInkbook(await file.arrayBuffer());
+  } else if (name.endsWith('.epub')) {
+    book = await bookFromEpub(file, file.name.replace(/\.epub$/i, ''));
   } else if (name.endsWith('.ink')) {
     book = bookFromInk(await file.text(), file.name.replace(/\.ink$/i, '')).book;
   } else if (name.endsWith('.json')) {
@@ -74,7 +77,7 @@ export async function importFile(file: File): Promise<Book> {
     const manifest = newManifest({ title: file.name.replace(/\.json$/i, '') });
     book = { id: manifest.id, manifest, storyJson: text, source: null, cover: null, assets: [] };
   } else {
-    throw new InkbookError('Unsupported file. Import .inkbook, .ink or compiled ink .json files.');
+    throw new InkbookError('Unsupported file. Import .epub, .inkbook, .ink or compiled ink .json files.');
   }
   await putBook(book);
   return book;
@@ -99,9 +102,23 @@ export function applySource(book: Book, source: string): { book: Book; result: C
   };
 }
 
-export type ExportKind = 'inkbook' | 'inkbook-nosource' | 'ink' | 'html' | 'epub' | 'json';
+export type ExportKind = 'inkbook' | 'inkbook-nosource' | 'ink' | 'html' | 'epub' | 'json' | 'original-epub';
 
-export const EXPORTS: { kind: ExportKind; label: string; hint: string; ext: string; needsSource?: boolean }[] = [
+interface ExportOption {
+  kind: ExportKind;
+  label: string;
+  hint: string;
+  ext: string;
+  needsSource?: boolean;
+}
+
+/** Export formats that apply to a book: ink books can be converted, e-books only downloaded. */
+export function exportsFor(book: Book): ExportOption[] {
+  if (isEpub(book)) return [{ kind: 'original-epub', label: 'E-book (.epub)', hint: 'The original file.', ext: 'epub' }];
+  return EXPORTS.filter((x) => !x.needsSource || book.source != null);
+}
+
+const EXPORTS: ExportOption[] = [
   { kind: 'inkbook', label: 'Ink book (.inkbook)', hint: 'For this app. Includes source, so it can be edited.', ext: 'inkbook' },
   { kind: 'inkbook-nosource', label: 'Ink book, read-only', hint: 'For sharing with readers only.', ext: 'inkbook' },
   { kind: 'html', label: 'Web page (.html)', hint: 'One file that plays in any browser.', ext: 'html' },
@@ -126,5 +143,8 @@ export async function exportBook(book: Book, kind: ExportKind): Promise<Blob> {
     case 'json':
       if (!book.storyJson) throw new InkbookError('Book has no compiled story.');
       return new Blob([book.storyJson], { type: 'application/json' });
+    case 'original-epub':
+      if (!book.epub) throw new InkbookError('This book has no e-book file.');
+      return book.epub;
   }
 }

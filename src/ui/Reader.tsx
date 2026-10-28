@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Book, SaveGame } from '../book/types';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { isEpub, type Book, type SaveGame } from '../book/types';
 import { ReaderSession } from '../ink/session';
 import { getBook, getSave, listSaves, putSave, deleteSave, recordEnding } from '../storage/db';
 import { useAssetUrls } from './hooks';
@@ -7,6 +7,9 @@ import { StoryView } from './StoryView';
 import { navigate } from './util';
 
 const AUTO = 'auto';
+
+// epub.js is only needed for standard e-books.
+const EpubReader = lazy(() => import('./EpubReader').then((m) => ({ default: m.EpubReader })));
 
 export function Reader({ bookId }: { bookId: string }) {
   const [book, setBook] = useState<Book | null | undefined>(undefined);
@@ -142,6 +145,14 @@ export function Reader({ bookId }: { bookId: string }) {
         <p>That book isn't in your library.</p>
         <button className="btn" onClick={() => navigate('#/')}>Back to library</button>
       </div>
+    );
+  }
+
+  if (isEpub(book)) {
+    return (
+      <Suspense fallback={<div className="loading">Opening book…</div>}>
+        <EpubReader book={book} />
+      </Suspense>
     );
   }
 

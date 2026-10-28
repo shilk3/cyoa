@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import type { Book, Progress } from '../book/types';
-import { listBooks, deleteBook, getProgress, getSave } from '../storage/db';
+import { listBooks, deleteBook, getProgress, getSave, getPosition } from '../storage/db';
+import { isEpub } from '../book/types';
 import { useObjectUrl } from './hooks';
 import { navigate, pickFiles } from './util';
 
@@ -12,6 +13,7 @@ interface Entry {
   book: Book;
   progress: Progress;
   started: boolean;
+  percent: number | null; // e-books only
 }
 
 export function Library() {
@@ -24,7 +26,13 @@ export function Library() {
     const books = await listBooks();
     setEntries(
       await Promise.all(
-        books.map(async (book) => ({ book, progress: await getProgress(book.id), started: !!(await getSave(book.id, 'auto')) })),
+        books.map(async (book) => {
+          if (isEpub(book)) {
+            const pos = await getPosition(book.id);
+            return { book, progress: { bookId: book.id, endings: [] }, started: !!pos, percent: pos?.percent ?? null };
+          }
+          return { book, progress: await getProgress(book.id), started: !!(await getSave(book.id, 'auto')), percent: null };
+        }),
       ),
     );
   }, []);
@@ -73,7 +81,7 @@ export function Library() {
       <header className="toolbar">
         <h1 className="brand">Inkbook</h1>
         <div className="toolbar-actions">
-          <button className="btn" onClick={async () => doImport(await pickFiles('.inkbook,.ink,.json,.zip', true))}>Import…</button>
+          <button className="btn" onClick={async () => doImport(await pickFiles('', true))}>Import…</button>
           <button className="btn primary" onClick={onNew}>New book</button>
         </div>
       </header>
@@ -85,7 +93,7 @@ export function Library() {
         ) : entries.length === 0 ? (
           <div className="empty-state">
             <h2>Your library is empty</h2>
-            <p>Import a <code>.inkbook</code> or <code>.ink</code> file (or drop one here), or start writing your own.</p>
+            <p>Import an e-book (<code>.epub</code>), an ink book (<code>.inkbook</code> or <code>.ink</code>), or drop one here. Or start writing your own.</p>
             <button className="btn primary" onClick={onNew}>Write a new book</button>
           </div>
         ) : (
@@ -106,7 +114,8 @@ export function Library() {
 }
 
 function BookCard({ entry, onExport, onDelete }: { entry: Entry; onExport: () => void; onDelete: () => void }) {
-  const { book, progress, started } = entry;
+  const { book, progress, started, percent } = entry;
+  const readable = isEpub(book) || !!book.storyJson;
   const cover = useObjectUrl(book.cover);
   const id = encodeURIComponent(book.id);
   const m = book.manifest;
@@ -126,11 +135,21 @@ function BookCard({ entry, onExport, onDelete }: { entry: Entry; onExport: () =>
         <h3>{m.title}</h3>
         {m.author && <p className="muted small">{m.author}</p>}
         <p className="muted small">
-          {!book.storyJson ? 'Draft: has errors' : started ? 'In progress' : 'Not started'}
+          {isEpub(book)
+            ? started
+              ? percent !== null
+                ? `${Math.round(percent * 100)}% read`
+                : 'In progress'
+              : 'E-book · not started'
+            : !book.storyJson
+              ? 'Draft: has errors'
+              : started
+                ? 'In progress'
+                : 'Not started'}
           {progress.endings.length > 0 && ` · ${progress.endings.length} ending${progress.endings.length === 1 ? '' : 's'} found`}
         </p>
         <div className="card-actions">
-          <button className="btn small primary" onClick={() => navigate(`#/read/${id}`)} disabled={!book.storyJson}>
+          <button className="btn small primary" onClick={() => navigate(`#/read/${id}`)} disabled={!readable}>
             {started ? 'Continue' : 'Read'}
           </button>
           {book.source != null && <button className="btn small" onClick={() => navigate(`#/write/${id}`)}>Edit</button>}
