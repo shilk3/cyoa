@@ -12,6 +12,8 @@ import { VariablesTable } from './Reader';
 import { ExportDialog } from './ExportDialog';
 import { InkHelp } from './InkHelp';
 import { navigate, pickFiles } from './util';
+import { LibraryButton } from './LibraryButton';
+import { ToolButton } from './icons';
 
 type Tab = 'preview' | 'problems' | 'outline' | 'details' | 'help';
 type SaveStatus = 'saved' | 'saving' | 'unsaved';
@@ -119,16 +121,14 @@ export function Writer({ bookId }: { bookId: string }) {
   return (
     <div className="writer">
       <header className="toolbar">
-        <button className="btn ghost" onClick={() => navigate('#/')}>← Library</button>
+        <LibraryButton />
         <h1 className="toolbar-title">{book.manifest.title}</h1>
         <span className={`status status-${status}`} aria-live="polite">
           {status === 'saved' ? 'Saved' : status === 'saving' ? 'Saving…' : 'Editing…'}
         </span>
         <div className="toolbar-actions">
-          <button className="btn" onClick={async () => { await flush(); navigate(`#/read/${id}`); }} disabled={!book.storyJson}>
-            Read
-          </button>
-          <button className="btn primary" onClick={async () => { await flush(); setExporting(true); }}>Export</button>
+          <ToolButton icon="read" label="Read" disabled={!book.storyJson} onClick={async () => { await flush(); navigate(`#/read/${id}`); }} />
+          <ToolButton icon="export" label="Export" primary onClick={async () => { await flush(); setExporting(true); }} />
         </div>
       </header>
 

@@ -23,8 +23,9 @@
   color-scheme: light;
 }
 
+/* Dark theme: follows the system unless the reader picked Light or Dark (data-theme on <html>). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #1d1a16;
     --surface: #25211c;
     --fg: #ece5d8;
@@ -45,6 +46,28 @@
     --syn-bracket: #d9c48a;
     color-scheme: dark;
   }
+}
+
+:root[data-theme='dark'] {
+  --bg: #1d1a16;
+  --surface: #25211c;
+  --fg: #ece5d8;
+  --muted: #a39887;
+  --accent: #e0a46b;
+  --accent-fg: #1d1a16;
+  --btn: #2f2a23;
+  --border: #3d362d;
+  --danger: #ff8a80;
+  --warn: #f0b75a;
+  --error-bg: #3a1f1c;
+  --syn-comment: #8a8172;
+  --syn-heading: #e0a46b;
+  --syn-choice: #8fd19e;
+  --syn-var: #c3a6ff;
+  --syn-divert: #7fb6f0;
+  --syn-tag: #e8a17a;
+  --syn-bracket: #d9c48a;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -174,7 +197,7 @@ a { color: var(--accent); }
 .vars th, .vars td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
 .vars th { font-family: var(--mono); font-weight: 500; width: 40%; }
 
-.story { font: 1.15rem/1.65 var(--serif); }
+.story { font: calc(1.15rem * var(--story-scale, 1))/1.65 var(--serif); }
 .story p { margin: 0 0 0.9em; }
 .story .chapter { text-align: center; font: 1.1rem var(--serif); font-variant: small-caps; letter-spacing: 0.06em; color: var(--accent); margin: 1.5em 0 1em; }
 .story img { display: block; max-width: 100%; margin: 1em auto; border-radius: 6px; }
@@ -279,7 +302,6 @@ a { color: var(--accent); }
   .mobile-switch { display: flex; border-bottom: 1px solid var(--border); }
   .mobile-switch button { flex: 1; background: none; border: 0; padding: 10px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
   .mobile-switch button[aria-selected='true'] { color: var(--fg); border-bottom-color: var(--accent); }
-  .toolbar { flex-wrap: wrap; }
   .status { display: none; }
   .shelf { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
 }
@@ -326,3 +348,32 @@ a { color: var(--accent); }
 /* Room for the notch and home indicator when installed to the home screen. */
 .toolbar { padding-top: calc(10px + env(safe-area-inset-top)); padding-left: calc(16px + env(safe-area-inset-left)); padding-right: calc(16px + env(safe-area-inset-right)); }
 .page, .shelf-wrap { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+
+/* Toolbar buttons: icon + label, icon only on phones so everything fits on one line. */
+.toolbar-actions { flex-wrap: nowrap; flex-shrink: 0; }
+.btn.tool { display: inline-flex; align-items: center; gap: 6px; }
+.icon { flex-shrink: 0; }
+@media (max-width: 760px) {
+  .toolbar { gap: 4px; padding-left: calc(8px + env(safe-area-inset-left)); padding-right: calc(8px + env(safe-area-inset-right)); }
+  .toolbar-actions { gap: 4px; }
+  .btn.tool { padding: 8px; min-width: 38px; min-height: 38px; justify-content: center; }
+  .btn.tool .tool-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .toolbar-title { font-size: 0.95rem; }
+  .brand { font-size: 1.15rem; }
+}
+
+/* System / Light / Dark switch */
+.segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.segmented button { display: inline-flex; align-items: center; gap: 5px; background: var(--btn); border: 0; padding: 6px 10px; cursor: pointer; font-size: 0.9em; }
+.segmented button + button { border-left: 1px solid var(--border); }
+.segmented button.on { background: var(--accent); color: var(--accent-fg); }
+.segmented .icon { width: 16px; height: 16px; }
+.setting-row { flex-wrap: wrap; }
+
+/* On the narrowest phones the reader's toolbar is all buttons; the title moves above the story. */
+.page-title { display: none; }
+@media (max-width: 400px) {
+  .reader .toolbar-title { display: none; }
+  .reader .toolbar-actions { margin-left: auto; }
+  .page-title { display: block; margin: 0 0 16px; text-align: center; font: 600 0.9rem var(--sans); color: var(--muted); }
+}

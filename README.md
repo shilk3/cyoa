@@ -1,4 +1,4 @@
-# cyoa-reader (Inkbook)
+# cyoa (Inkbook)
 
 Read, write and export choose-your-own-adventure books written in [ink](https://www.inklestudios.com/ink/), and read ordinary EPUB e-books too.
 
@@ -21,7 +21,12 @@ Everything runs in the browser. Books are stored on your device in IndexedDB, an
 - Turn pages with a swipe, by tapping the left or right edge, with the arrow buttons, or with the arrow keys
 - Switch between page and scroll layout, and change the text size
 - Table of contents, chapter name and percentage read
-- Your position is saved automatically, and dark mode follows your system setting
+- Your position is saved automatically
+
+**Display**
+- Light and dark themes, or follow your phone's or computer's setting (the default)
+- Text size for both kinds of book
+- On phones the toolbar shows icons only, so it fits on one line
 
 **Writer**
 - Ink editor with syntax highlighting
@@ -60,7 +65,7 @@ EPUB export works by exploring every reachable state of the story. Stories whose
 
 The app is published to GitHub Pages by `.github/workflows/deploy.yml` on every push to `main`.
 
-1. Open https://shilk3.github.io/cyoa-reader/ in Safari (iPhone) or Chrome (Android).
+1. Open https://shilk3.github.io/cyoa/ in Safari (iPhone) or Chrome (Android).
 2. Add it to your home screen: on iPhone, tap Share, then **Add to Home Screen**; on Android, open the menu and tap **Install app**.
 3. Import books with **Import…**, which opens the Files app. Exports open the share sheet, where you can choose **Save to Files**.
 
