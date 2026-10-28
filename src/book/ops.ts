@@ -3,7 +3,7 @@ import { metaFromGlobalTags } from '../ink/tags';
 import { newManifest, unpackInkbook, packInkbook, InkbookError } from './inkbook';
 import { bookFromEpub } from './epubImport';
 import { isEpub, type Book } from './types';
-import { putBook } from '../storage/db';
+import { getBook, putBook } from '../storage/db';
 
 export const NEW_BOOK_TEMPLATE = `# title: My Adventure
 # author: Anonymous
@@ -60,8 +60,11 @@ export async function importFile(file: File): Promise<Book> {
   const name = file.name.toLowerCase();
   let book: Book;
   if (name.endsWith('.inkbook') || name.endsWith('.zip')) {
-    // Re-importing a book with the same id replaces it; saves are keyed by id so progress is kept.
+    // Re-importing a book with the same id replaces it; saves are keyed by id so progress is kept,
+    // and so is a Face ID lock (which lives on this device, not in the file).
     book = await unpackInkbook(await file.arrayBuffer());
+    const existing = await getBook(book.id);
+    if (existing?.locked) book.locked = true;
   } else if (name.endsWith('.epub')) {
     book = await bookFromEpub(file, file.name.replace(/\.epub$/i, ''));
   } else if (name.endsWith('.ink')) {
