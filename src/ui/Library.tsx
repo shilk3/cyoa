@@ -4,6 +4,9 @@ import { listBooks, deleteBook, getProgress, getSave, getPosition } from '../sto
 import { isEpub } from '../book/types';
 import { useObjectUrl } from './hooks';
 import { navigate, pickFiles } from './util';
+import { ToolButton } from './icons';
+import { ThemePicker } from './ThemePicker';
+import { useThemePref } from './theme';
 
 // Import/export code includes the ink compiler; load it only when needed.
 const ops = () => import('../book/ops');
@@ -21,6 +24,9 @@ export function Library() {
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<Book | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [showTheme, setShowTheme] = useState(false);
+  const [themePref] = useThemePref();
+  const themeIcon = themePref === 'dark' ? 'moon' : themePref === 'light' ? 'sun' : 'system';
 
   const refresh = useCallback(async () => {
     const books = await listBooks();
@@ -81,10 +87,16 @@ export function Library() {
       <header className="toolbar">
         <h1 className="brand">Inkbook</h1>
         <div className="toolbar-actions">
-          <button className="btn" onClick={async () => doImport(await pickFiles('', true))}>Import…</button>
-          <button className="btn primary" onClick={onNew}>New book</button>
+          <ToolButton icon="import" label="Import…" onClick={async () => doImport(await pickFiles('', true))} />
+          <ToolButton icon={themeIcon} label="Theme" active={showTheme} onClick={() => setShowTheme(!showTheme)} />
+          <ToolButton icon="plus" label="New book" primary onClick={onNew} />
         </div>
       </header>
+      {showTheme && (
+        <aside className="panel">
+          <ThemePicker />
+        </aside>
+      )}
 
       <main className="shelf-wrap">
         {error && <p className="error-box">{error}</p>}

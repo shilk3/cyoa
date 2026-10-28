@@ -30,3 +30,24 @@ export function useHashRoute(): string[] {
   }, []);
   return route;
 }
+
+/** A number kept in localStorage (a per-device preference such as text size). */
+export function useStoredNumber(key: string, initial: number): [number, (n: number) => void] {
+  const [value, setValue] = useState(() => {
+    try {
+      const v = Number(localStorage.getItem(key));
+      return Number.isFinite(v) && v > 0 ? v : initial;
+    } catch {
+      return initial;
+    }
+  });
+  const set = (n: number) => {
+    setValue(n);
+    try {
+      localStorage.setItem(key, String(n));
+    } catch {
+      // Preference only lasts for this visit.
+    }
+  };
+  return [value, set];
+}

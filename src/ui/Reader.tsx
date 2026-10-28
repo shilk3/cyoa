@@ -5,6 +5,10 @@ import { getBook, getSave, listSaves, putSave, deleteSave, recordEnding } from '
 import { useAssetUrls } from './hooks';
 import { StoryView } from './StoryView';
 import { navigate } from './util';
+import { LibraryButton } from './LibraryButton';
+import { ToolButton } from './icons';
+import { ThemePicker } from './ThemePicker';
+import { useStoredNumber } from './hooks';
 
 const AUTO = 'auto';
 
@@ -17,7 +21,9 @@ export function Reader({ bookId }: { bookId: string }) {
   const [, setTick] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [panel, setPanel] = useState<'none' | 'bookmarks' | 'stats'>('none');
+  const [panel, setPanel] = useState<'none' | 'bookmarks' | 'stats' | 'display'>('none');
+  const togglePanel = (p: typeof panel) => setPanel(panel === p ? 'none' : p);
+  const [textSize, setTextSize] = useStoredNumber('inkbook:ink-text-size', 100);
   const [bookmarks, setBookmarks] = useState<SaveGame[]>([]);
   const assetUrls = useAssetUrls(book?.assets);
   const rerender = () => setTick((t) => t + 1);
@@ -159,22 +165,29 @@ export function Reader({ bookId }: { bookId: string }) {
   return (
     <div className="reader">
       <header className="toolbar">
-        <button className="btn ghost" onClick={() => navigate('#/')} aria-label="Back to library">← Library</button>
+        <LibraryButton />
         <h1 className="toolbar-title">{book.manifest.title}</h1>
         <div className="toolbar-actions">
-          <button className="btn" onClick={undo} disabled={!s?.canUndo} title="Undo the last choice">Back</button>
-          <button className="btn" onClick={restart} disabled={!s}>Restart</button>
-          <button className={`btn ${panel === 'bookmarks' ? 'active' : ''}`} onClick={() => setPanel(panel === 'bookmarks' ? 'none' : 'bookmarks')}>
-            Bookmarks
-          </button>
-          <button className={`btn ${panel === 'stats' ? 'active' : ''}`} onClick={() => setPanel(panel === 'stats' ? 'none' : 'stats')}>
-            Stats
-          </button>
-          {book.source != null && (
-            <button className="btn" onClick={() => navigate(`#/write/${encodeURIComponent(book.id)}`)}>Edit</button>
-          )}
+          <ToolButton icon="undo" label="Back" onClick={undo} disabled={!s?.canUndo} />
+          <ToolButton icon="restart" label="Restart" onClick={restart} disabled={!s} />
+          <ToolButton icon="bookmark" label="Bookmarks" active={panel === 'bookmarks'} onClick={() => togglePanel('bookmarks')} />
+          <ToolButton icon="stats" label="Stats" active={panel === 'stats'} onClick={() => togglePanel('stats')} />
+          <ToolButton icon="display" label="Display" active={panel === 'display'} onClick={() => togglePanel('display')} />
+          {book.source != null && <ToolButton icon="edit" label="Edit" onClick={() => navigate(`#/write/${encodeURIComponent(book.id)}`)} />}
         </div>
       </header>
+
+      {panel === 'display' && (
+        <aside className="panel">
+          <ThemePicker />
+          <div className="setting-row">
+            <span>Text size</span>
+            <button className="btn" onClick={() => setTextSize(textSize - 10)} disabled={textSize <= 70} aria-label="Smaller text">A−</button>
+            <span className="muted small">{textSize}%</span>
+            <button className="btn" onClick={() => setTextSize(textSize + 10)} disabled={textSize >= 200} aria-label="Larger text">A+</button>
+          </div>
+        </aside>
+      )}
 
       {panel === 'bookmarks' && (
         <aside className="panel">
@@ -201,7 +214,7 @@ export function Reader({ bookId }: { bookId: string }) {
         </aside>
       )}
 
-      <main className="page">
+      <main className="page" style={{ ['--story-scale' as string]: textSize / 100 }}>
         {!book.storyJson ? (
           <div className="empty-state">
             <p>This book doesn't compile yet, so there's nothing to read.</p>
@@ -209,6 +222,7 @@ export function Reader({ bookId }: { bookId: string }) {
           </div>
         ) : (
           <>
+            <p className="page-title">{book.manifest.title}</p>
             {notice && <p className="notice">{notice}</p>}
             {s && (
               <StoryView

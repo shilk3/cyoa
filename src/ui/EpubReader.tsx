@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import ePub, { type Book as EpubBook, type Rendition, type NavItem } from 'epubjs';
 import type { Book } from '../book/types';
 import { getPosition, putPosition } from '../storage/db';
-import { navigate } from './util';
+import { LibraryButton } from './LibraryButton';
+import { ToolButton } from './icons';
+import { ThemePicker } from './ThemePicker';
+import { onThemeChange } from './theme';
 
 type Flow = 'paginated' | 'scrolled-doc';
 
@@ -160,18 +163,17 @@ export function EpubReader({ book }: { book: Book }) {
     savePrefs(prefs);
   }, [prefs]);
 
-  // Follow the system light/dark setting while reading.
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const on = () => {
-      const r = renditionRef.current;
-      if (!r) return;
-      r.themes.register('app', themeRules());
-      r.themes.select('app');
-    };
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
+  // Recolour the book when the theme changes (from the picker or the system setting).
+  useEffect(
+    () =>
+      onThemeChange(() => {
+        const r = renditionRef.current;
+        if (!r) return;
+        r.themes.register('app', themeRules());
+        r.themes.select('app');
+      }),
+    [],
+  );
 
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'ArrowLeft' || e.key === 'PageUp') void renditionRef.current?.prev();
@@ -190,11 +192,11 @@ export function EpubReader({ book }: { book: Book }) {
   return (
     <div className="epub-reader">
       <header className="toolbar">
-        <button className="btn ghost" onClick={() => navigate('#/')} aria-label="Back to library">← Library</button>
+        <LibraryButton />
         <h1 className="toolbar-title">{book.manifest.title}</h1>
         <div className="toolbar-actions">
-          <button className={`btn ${panel === 'toc' ? 'active' : ''}`} onClick={() => setPanel(panel === 'toc' ? 'none' : 'toc')}>Contents</button>
-          <button className={`btn ${panel === 'settings' ? 'active' : ''}`} onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')} aria-label="Text settings">Aa</button>
+          <ToolButton icon="contents" label="Contents" active={panel === 'toc'} onClick={() => setPanel(panel === 'toc' ? 'none' : 'toc')} />
+          <ToolButton icon="display" label="Display" active={panel === 'settings'} onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')} />
         </div>
       </header>
 
@@ -205,6 +207,7 @@ export function EpubReader({ book }: { book: Book }) {
       )}
       {panel === 'settings' && (
         <aside className="panel epub-panel">
+          <ThemePicker />
           <div className="setting-row">
             <span>Text size</span>
             <button className="btn" onClick={() => setPrefs({ ...prefs, fontSize: Math.max(70, prefs.fontSize - 10) })} aria-label="Smaller text">A−</button>
