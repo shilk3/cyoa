@@ -5,6 +5,7 @@ import { isEpub } from '../book/types';
 import { useObjectUrl } from './hooks';
 import { navigate, pickFiles } from './util';
 import { ToolButton } from './icons';
+import { DropPanel } from './DropPanel';
 import { ThemePicker } from './ThemePicker';
 import { useThemePref } from './theme';
 
@@ -84,19 +85,21 @@ export function Library() {
         void doImport(Array.from(e.dataTransfer.files));
       }}
     >
-      <header className="toolbar">
-        <h1 className="brand">Inkbook</h1>
-        <div className="toolbar-actions">
-          <ToolButton icon="import" label="Import…" onClick={async () => doImport(await pickFiles('', true))} />
-          <ToolButton icon={themeIcon} label="Theme" active={showTheme} onClick={() => setShowTheme(!showTheme)} />
-          <ToolButton icon="plus" label="New book" primary onClick={onNew} />
-        </div>
-      </header>
-      {showTheme && (
-        <aside className="panel">
-          <ThemePicker />
-        </aside>
-      )}
+      <div className="top-bar">
+        <header className="toolbar">
+          <h1 className="brand">Inkbook</h1>
+          <div className="toolbar-actions">
+            <ToolButton icon="import" label="Import…" onClick={async () => doImport(await pickFiles('', true))} />
+            <ToolButton icon={themeIcon} label="Theme" active={showTheme} onClick={() => setShowTheme(!showTheme)} />
+            <ToolButton icon="plus" label="New book" primary onClick={onNew} />
+          </div>
+        </header>
+        {showTheme && (
+          <DropPanel onClose={() => setShowTheme(false)}>
+            <ThemePicker />
+          </DropPanel>
+        )}
+      </div>
 
       <main className="shelf-wrap">
         {error && <p className="error-box">{error}</p>}

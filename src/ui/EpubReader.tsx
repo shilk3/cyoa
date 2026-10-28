@@ -4,6 +4,7 @@ import type { Book } from '../book/types';
 import { getPosition, putPosition } from '../storage/db';
 import { LibraryButton } from './LibraryButton';
 import { ToolButton } from './icons';
+import { DropPanel } from './DropPanel';
 import { ThemePicker } from './ThemePicker';
 import { onThemeChange } from './theme';
 
@@ -191,36 +192,38 @@ export function EpubReader({ book }: { book: Book }) {
 
   return (
     <div className="epub-reader">
-      <header className="toolbar">
-        <LibraryButton />
-        <h1 className="toolbar-title">{book.manifest.title}</h1>
-        <div className="toolbar-actions">
-          <ToolButton icon="contents" label="Contents" active={panel === 'toc'} onClick={() => setPanel(panel === 'toc' ? 'none' : 'toc')} />
-          <ToolButton icon="display" label="Display" active={panel === 'settings'} onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')} />
-        </div>
-      </header>
+      <div className="top-bar">
+        <header className="toolbar">
+          <LibraryButton />
+          <h1 className="toolbar-title">{book.manifest.title}</h1>
+          <div className="toolbar-actions">
+            <ToolButton icon="contents" label="Contents" active={panel === 'toc'} onClick={() => setPanel(panel === 'toc' ? 'none' : 'toc')} />
+            <ToolButton icon="display" label="Display" active={panel === 'settings'} onClick={() => setPanel(panel === 'settings' ? 'none' : 'settings')} />
+          </div>
+        </header>
 
-      {panel === 'toc' && (
-        <aside className="panel epub-panel">
-          {toc.length === 0 ? <p className="muted">This book has no table of contents.</p> : <TocList items={toc} onGo={goTo} />}
-        </aside>
-      )}
-      {panel === 'settings' && (
-        <aside className="panel epub-panel">
-          <ThemePicker />
-          <div className="setting-row">
-            <span>Text size</span>
-            <button className="btn" onClick={() => setPrefs({ ...prefs, fontSize: Math.max(70, prefs.fontSize - 10) })} aria-label="Smaller text">A−</button>
-            <span className="muted small">{prefs.fontSize}%</span>
-            <button className="btn" onClick={() => setPrefs({ ...prefs, fontSize: Math.min(200, prefs.fontSize + 10) })} aria-label="Larger text">A+</button>
-          </div>
-          <div className="setting-row">
-            <span>Layout</span>
-            <button className={`btn ${prefs.flow === 'paginated' ? 'active' : ''}`} onClick={() => setPrefs({ ...prefs, flow: 'paginated' })}>Pages</button>
-            <button className={`btn ${prefs.flow === 'scrolled-doc' ? 'active' : ''}`} onClick={() => setPrefs({ ...prefs, flow: 'scrolled-doc' })}>Scroll</button>
-          </div>
-        </aside>
-      )}
+        {panel === 'toc' && (
+          <DropPanel onClose={() => setPanel('none')}>
+            {toc.length === 0 ? <p className="muted">This book has no table of contents.</p> : <TocList items={toc} onGo={goTo} />}
+          </DropPanel>
+        )}
+        {panel === 'settings' && (
+          <DropPanel onClose={() => setPanel('none')}>
+            <ThemePicker />
+            <div className="setting-row">
+              <span>Text size</span>
+              <button className="btn" onClick={() => setPrefs({ ...prefs, fontSize: Math.max(70, prefs.fontSize - 10) })} aria-label="Smaller text">A−</button>
+              <span className="muted small">{prefs.fontSize}%</span>
+              <button className="btn" onClick={() => setPrefs({ ...prefs, fontSize: Math.min(200, prefs.fontSize + 10) })} aria-label="Larger text">A+</button>
+            </div>
+            <div className="setting-row">
+              <span>Layout</span>
+              <button className={`btn ${prefs.flow === 'paginated' ? 'active' : ''}`} onClick={() => setPrefs({ ...prefs, flow: 'paginated' })}>Pages</button>
+              <button className={`btn ${prefs.flow === 'scrolled-doc' ? 'active' : ''}`} onClick={() => setPrefs({ ...prefs, flow: 'scrolled-doc' })}>Scroll</button>
+            </div>
+          </DropPanel>
+        )}
+      </div>
 
       {error ? (
         <div className="empty-state"><p className="error-box">{error}</p></div>
