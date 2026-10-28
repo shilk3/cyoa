@@ -7,7 +7,7 @@ import { ToolButton } from './icons';
 import { DropPanel } from './DropPanel';
 import { ThemePicker } from './ThemePicker';
 import { onThemeChange } from './theme';
-import { MARGINS, SPACING, useLayoutPrefs, type LayoutPrefs } from './layoutPrefs';
+import { MARGINS, SPACING, WIDTHS, useLayoutPrefs, type LayoutPrefs } from './layoutPrefs';
 import { LayoutPicker } from './LayoutPicker';
 
 type Flow = 'paginated' | 'scrolled-doc';
@@ -91,7 +91,8 @@ export function EpubReader({ book }: { book: Book }) {
           width: '100%',
           height: '100%',
           flow: prefs.flow,
-          spread: 'none',
+          // Two pages side by side when the column is wide enough (big screens, page layout).
+          spread: layout.width === 'standard' ? 'none' : 'auto',
           // Space between pages; half of it shows at each side of the text.
           gap: MARGINS[layout.margins] * 2,
           allowScriptedContent: false,
@@ -179,7 +180,7 @@ export function EpubReader({ book }: { book: Book }) {
     // Font size, colours and spacing are applied live below; layout and margin changes need a
     // fresh rendition (epub.js only reads its page gap when it starts).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [book.id, book.epub, prefs.flow, layout.margins]);
+  }, [book.id, book.epub, prefs.flow, layout.margins, layout.width]);
 
   useEffect(() => {
     renditionRef.current?.themes.fontSize(`${prefs.fontSize}%`);
@@ -249,7 +250,7 @@ export function EpubReader({ book }: { book: Book }) {
       {error ? (
         <div className="empty-state"><p className="error-box">{error}</p></div>
       ) : (
-        <div className={`ebook-stage flow-${prefs.flow}`} style={{ ['--page-margin' as string]: `${MARGINS[layout.margins]}px` }}>
+        <div className={`ebook-stage flow-${prefs.flow}`} style={{ ['--page-margin' as string]: `${MARGINS[layout.margins]}px`, ['--page-width' as string]: WIDTHS[layout.width] }}>
           <div className="ebook-host" ref={host} />
         </div>
       )}

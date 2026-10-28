@@ -139,7 +139,7 @@ a { color: var(--accent); }
 /* Library */
 .library { min-height: 100%; }
 .library.dragging { outline: 3px dashed var(--accent); outline-offset: -8px; }
-.shelf-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+.shelf-wrap { max-width: 1600px; margin: 0 auto; padding: 24px 16px 64px; }
 .shelf {
   list-style: none;
   padding: 0;
@@ -181,7 +181,7 @@ a { color: var(--accent); }
 
 /* Reader */
 .reader { min-height: 100%; }
-.page { max-width: 38em; margin: 0 auto; padding: 24px var(--page-margin, 16px) 96px; }
+.page { max-width: var(--page-width, 960px); margin: 0 auto; padding: 24px var(--page-margin, 16px) 96px; }
 .panel {
   max-width: 38em;
   margin: 12px auto 0;
@@ -197,7 +197,9 @@ a { color: var(--accent); }
 .vars th, .vars td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
 .vars th { font-family: var(--mono); font-weight: 500; width: 40%; }
 
-.story { font: calc(1.15rem * var(--story-scale, 1))/var(--story-leading, 1.65) var(--serif); }
+.story { font: calc(var(--story-base, 1.15rem) * var(--story-scale, 1))/var(--story-leading, 1.65) var(--serif); }
+/* Bigger screens get slightly bigger text so the wider column doesn't make lines too long. */
+@media (min-width: 1200px) { .page { --story-base: 1.3rem; } }
 .story p { margin: 0 0 var(--story-gap, 0.9em); }
 .story .chapter { text-align: center; font: 1.1rem var(--serif); font-variant: small-caps; letter-spacing: 0.06em; color: var(--accent); margin: 1.5em 0 1em; }
 .story img { display: block; max-width: 100%; margin: 1em auto; border-radius: 6px; }
@@ -335,7 +337,7 @@ a { color: var(--accent); }
 .ebook-stage { flex: 1; min-height: 0; display: flex; justify-content: center; padding: 12px 0 0; }
 /* Wide screens: keep a comfortable reading column; on phones the margin setting is the only margin. */
 @media (min-width: 761px) { .ebook-stage { padding: 12px var(--page-margin, 16px) 0; } }
-.ebook-host { width: 100%; max-width: 42em; height: 100%; }
+.ebook-host { width: 100%; max-width: var(--page-width, 960px); height: 100%; }
 .epub-footer { display: flex; align-items: center; gap: 12px; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); }
 .epub-footer .btn { font-size: 1.3rem; line-height: 1; padding: 6px 16px; }
 .epub-where { flex: 1; display: flex; justify-content: center; gap: 12px; min-width: 0; text-align: center; }
@@ -419,3 +421,42 @@ a { color: var(--accent); }
 .lock-badge .icon { width: 34px; height: 34px; }
 .btn.big { font-size: 1.05rem; padding: 12px 22px; border-radius: 12px; }
 .card-actions .btn .icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; }
+
+/* Book card "⋯" menu */
+.card-actions { align-items: center; }
+.card-menu { position: relative; }
+.card-more { padding: 3px 8px; display: inline-flex; align-items: center; }
+.card-more .icon { width: 18px; height: 18px; stroke-width: 3.5; }
+.menu-backdrop { position: fixed; inset: 0; z-index: 20; }
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 21;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.2);
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.menu-item:hover, .menu-item:focus-visible { background: var(--btn); outline: none; }
+.menu-item .icon { width: 18px; height: 18px; color: var(--muted); }
+.menu-item.danger, .menu-item.danger .icon { color: var(--danger); }
+
+/* Page width only matters on big screens; phones always use the whole width. */
+@media (max-width: 760px) { .big-screen-only { display: none; } }
