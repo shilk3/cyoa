@@ -1,13 +1,15 @@
-# cyoa (Inkbook)
+# Pagefork
 
-Read, write and export choose-your-own-adventure books written in [ink](https://www.inklestudios.com/ink/), and read ordinary EPUB e-books too.
+Pagefork reads, writes and exports choose-your-own-adventure books written in [ink](https://www.inklestudios.com/ink/), and reads ordinary EPUB e-books too.
+
+Pagefork uses ink, the open-source narrative scripting language by [inkle](https://www.inklestudios.com/), under the MIT licence. The `.pagefork` book format and the multiplayer conventions are Pagefork's own.
 
 Everything runs in the browser. Books are stored on your device in IndexedDB, and no server is needed. You can install it to your phone's home screen, and it works offline.
 
 ## Features
 
 **Library**
-- Import `.epub`, `.inkbook`, `.ink` or compiled ink `.json` files, either with the file picker or by dropping them on the page
+- Import `.epub`, `.pagefork` (or older `.inkbook`), `.ink` or compiled ink `.json` files, either with the file picker or by dropping them on the page
 - Shows covers, reading progress and how many endings you've found
 - Each book has Read/Continue plus a ⋯ menu with Edit, Export, Lock and Delete
 - **Face ID lock** for individual books: a locked book's cover and title are hidden, and it needs Face ID (or Touch ID, or the device passcode) to open, edit, export or delete. Books re-lock whenever the app goes to the background. This is a privacy lock, not encryption, so a lost passkey can never cost you a book: use *Set up Face ID again* on the lock screen.
@@ -50,8 +52,8 @@ Everything runs in the browser. Books are stored on your device in IndexedDB, an
 
 | Format | Use it for |
 |---|---|
-| `.inkbook` | This app. Includes the source, so the book can be edited. |
-| `.inkbook` (read-only) | Sharing with readers. The source is left out. |
+| `.pagefork` | This app. Includes the source, so the book can be edited. |
+| `.pagefork` (read-only) | Sharing with readers. The source is left out. |
 | `.html` | A single file that plays in any browser, with undo and autosave. |
 | `.epub` | E-readers. The story is turned into numbered, linked sections ("turn to 12"). |
 | `.ink` | Editing in [Inky](https://github.com/inkle/inky) or other ink tools. |
@@ -106,7 +108,7 @@ The app is published to GitHub Pages by `.github/workflows/deploy.yml` on every 
 2. Add it to your home screen: on iPhone, tap Share, then **Add to Home Screen**; on Android, open the menu and tap **Install app**.
 3. Import books with **Import…**, which opens the Files app. Exports open the share sheet, where you can choose **Save to Files**.
 
-Books are stored on the device, so each phone or browser has its own library. Use `.inkbook` export and import to move books between devices.
+Books are stored on the device, so each phone or browser has its own library. Use `.pagefork` export and import to move books between devices.
 
 ## Development
 

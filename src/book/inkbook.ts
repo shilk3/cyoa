@@ -1,6 +1,8 @@
 import JSZip from 'jszip';
 import { INKBOOK_FORMAT_VERSION, type Asset, type Book, type Manifest } from './types';
 
+// The app was first called Inkbook; book files are now saved as .pagefork, but the file format
+// (and its manifest's "format": "inkbook" marker) is unchanged, so older .inkbook files still open.
 export class InkbookError extends Error {}
 
 export function newId(): string {
@@ -70,7 +72,7 @@ export async function unpackInkbook(data: Blob | ArrayBuffer): Promise<Book> {
   try {
     zip = await JSZip.loadAsync(data);
   } catch {
-    throw new InkbookError('Not a valid .inkbook file (could not open zip).');
+    throw new InkbookError('Not a valid Pagefork book (could not open zip).');
   }
   const mf = zip.file('manifest.json');
   if (!mf) throw new InkbookError('Missing manifest.json.');
@@ -80,7 +82,7 @@ export async function unpackInkbook(data: Blob | ArrayBuffer): Promise<Book> {
   } catch {
     throw new InkbookError('manifest.json is not valid JSON.');
   }
-  if (manifest.format !== 'inkbook') throw new InkbookError('manifest.json is not an inkbook manifest.');
+  if (manifest.format !== 'inkbook') throw new InkbookError('This is not a Pagefork book.');
   if (manifest.formatVersion > INKBOOK_FORMAT_VERSION) {
     throw new InkbookError(`This book needs a newer reader (format v${manifest.formatVersion}).`);
   }

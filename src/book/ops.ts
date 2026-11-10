@@ -55,11 +55,11 @@ export async function createNewBook(): Promise<Book> {
   return book;
 }
 
-/** Imports a .inkbook, .ink, compiled ink .json or standard .epub file into the library. */
+/** Imports a .pagefork (or older .inkbook), .ink, compiled ink .json or standard .epub file into the library. */
 export async function importFile(file: File): Promise<Book> {
   const name = file.name.toLowerCase();
   let book: Book;
-  if (name.endsWith('.inkbook') || name.endsWith('.zip')) {
+  if (name.endsWith('.pagefork') || name.endsWith('.inkbook') || name.endsWith('.zip')) {
     // Re-importing a book with the same id replaces it; saves are keyed by id so progress is kept,
     // and so is a Face ID lock (which lives on this device, not in the file).
     book = await unpackInkbook(await file.arrayBuffer());
@@ -80,7 +80,7 @@ export async function importFile(file: File): Promise<Book> {
     const manifest = newManifest({ title: file.name.replace(/\.json$/i, '') });
     book = { id: manifest.id, manifest, storyJson: text, source: null, cover: null, assets: [] };
   } else {
-    throw new InkbookError('Unsupported file. Import .epub, .inkbook, .ink or compiled ink .json files.');
+    throw new InkbookError('Unsupported file. Import .epub, .pagefork, .ink or compiled ink .json files.');
   }
   await putBook(book);
   return book;
@@ -122,8 +122,8 @@ export function exportsFor(book: Book): ExportOption[] {
 }
 
 const EXPORTS: ExportOption[] = [
-  { kind: 'inkbook', label: 'Ink book (.inkbook)', hint: 'For this app. Includes source, so it can be edited.', ext: 'inkbook' },
-  { kind: 'inkbook-nosource', label: 'Ink book, read-only', hint: 'For sharing with readers only.', ext: 'inkbook' },
+  { kind: 'inkbook', label: 'Pagefork book (.pagefork)', hint: 'For this app. Includes source, so it can be edited.', ext: 'pagefork' },
+  { kind: 'inkbook-nosource', label: 'Pagefork book, read-only', hint: 'For sharing with readers only.', ext: 'pagefork' },
   { kind: 'html', label: 'Web page (.html)', hint: 'One file that plays in any browser.', ext: 'html' },
   { kind: 'epub', label: 'E-book (.epub)', hint: 'Numbered, linked sections for e-readers.', ext: 'epub' },
   { kind: 'ink', label: 'Ink source (.ink)', hint: 'Open in Inky or other ink tools.', ext: 'ink', needsSource: true },

@@ -1,6 +1,6 @@
 {
-  "name": "Inkbook",
-  "short_name": "Inkbook",
+  "name": "Pagefork",
+  "short_name": "Pagefork",
   "description": "Read, write and export choose-your-own-adventure books and e-books.",
   "start_url": "./",
   "scope": "./",

@@ -125,7 +125,7 @@ export function Library() {
     >
       <div className="top-bar">
         <header className="toolbar">
-          <h1 className="brand">Inkbook</h1>
+          <h1 className="brand">Pagefork</h1>
           <div className="toolbar-actions">
             <ToolButton icon="import" label="Import…" onClick={async () => doImport(await pickFiles('', true))} />
             <ToolButton icon={themeIcon} label="Theme" active={showTheme} onClick={() => setShowTheme(!showTheme)} />
@@ -147,7 +147,7 @@ export function Library() {
         ) : entries.length === 0 ? (
           <div className="empty-state">
             <h2>Your library is empty</h2>
-            <p>Import an e-book (<code>.epub</code>), an ink book (<code>.inkbook</code> or <code>.ink</code>), or drop one here. Or start writing your own.</p>
+            <p>Import an e-book (<code>.epub</code>), a Pagefork book (<code>.pagefork</code>) or ink story (<code>.ink</code>), or drop one here. Or start writing your own.</p>
             <button className="btn primary" onClick={onNew}>Write a new book</button>
           </div>
         ) : (
