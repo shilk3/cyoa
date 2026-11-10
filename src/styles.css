@@ -460,3 +460,41 @@ a { color: var(--accent); }
 
 /* Page width only matters on big screens; phones always use the whole width. */
 @media (max-width: 760px) { .big-screen-only { display: none; } }
+
+/* Multiplayer */
+.players-badge { display: inline-block; margin: 4px 0 0; padding: 1px 8px; border-radius: 999px; background: var(--btn); color: var(--accent); font-weight: 600; }
+.turn-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 1.6em 0 -0.6em;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--btn);
+  border: 1px solid var(--border);
+  font: 0.95rem var(--sans);
+  text-align: center;
+}
+.turn-banner strong { font-size: 1.15rem; color: var(--accent); }
+.turn-banner em { color: var(--muted); }
+.turn-banner.small-banner { display: block; background: none; border: 0; padding: 0; color: var(--muted); font-size: 0.85rem; }
+.choices.waiting .choice { opacity: 0.55; cursor: default; }
+.party-setup { font: 1rem var(--sans); }
+.party-setup h2 { margin-top: 0; }
+.party-setup section { margin: 22px 0; }
+.party-setup h3 { font-size: 0.95rem; margin: 0 0 8px; }
+.field { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; font-size: 0.85em; color: var(--muted); }
+.field.row { flex-direction: row; align-items: center; }
+.field input, .field select {
+  font: 1rem var(--sans);
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  flex: 1;
+  min-width: 0;
+}
+.field input:disabled { opacity: 0.6; }
+.party-setup .row { gap: 8px; flex-wrap: wrap; }

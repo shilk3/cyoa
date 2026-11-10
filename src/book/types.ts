@@ -39,6 +39,14 @@ export interface Book {
   locked?: boolean;
 }
 
+/** A pass-and-play game on one device. */
+export interface PartyConfig {
+  names: string[]; // character names
+  people: string[]; // who's playing
+  owners: (number | null)[]; // per character: index into people, or null when shared
+  seed: number;
+}
+
 export interface SaveGame {
   bookId: string;
   slot: string; // "auto" or a user-named slot
@@ -47,6 +55,7 @@ export interface SaveGame {
   transcript: TranscriptEntry[];
   undo: UndoEntry[];
   updated: string;
+  party?: PartyConfig;
 }
 
 export interface TranscriptEntry {

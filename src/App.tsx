@@ -27,6 +27,13 @@ export default function App() {
       </LockGate>
     );
   }
+  if (view === 'party' && id) {
+    return (
+      <LockGate key={`party:${id}`} bookId={id}>
+        <Reader bookId={id} mode="party" />
+      </LockGate>
+    );
+  }
   if (view === 'write' && id) {
     return (
       <LockGate key={id} bookId={id}>

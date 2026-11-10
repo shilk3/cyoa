@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from
 import type { Book, Progress } from '../book/types';
 import { listBooks, deleteBook, getProgress, getSave, getPosition, putBook } from '../storage/db';
 import { isEpub } from '../book/types';
+import { playersFromStoryJson } from '../ink/multiplayer';
 import { useObjectUrl } from './hooks';
 import { navigate, pickFiles } from './util';
 import { ToolButton } from './icons';
@@ -186,6 +187,7 @@ function BookCard({ entry, canLock, guarded, onToggleLock, onExport, onDelete }:
   const id = encodeURIComponent(book.id);
   const m = book.manifest;
   const read = guarded(() => navigate(`#/read/${id}`));
+  const players = isEpub(book) ? 1 : playersFromStoryJson(book.storyJson);
 
   // Locked and not opened since the app was last in the background: show nothing about the book.
   if (book.locked && !isUnlocked(book.id)) {
@@ -240,11 +242,15 @@ function BookCard({ entry, canLock, guarded, onToggleLock, onExport, onDelete }:
                 : 'Not started'}
           {progress.endings.length > 0 && ` · ${progress.endings.length} ending${progress.endings.length === 1 ? '' : 's'} found`}
         </p>
+        {players > 1 && <p className="players-badge small">{players} players · or play solo</p>}
         <div className="card-actions">
           <button className="btn small primary" onClick={read} disabled={!readable}>
             {started ? 'Continue' : 'Read'}
           </button>
           <CardMenu label={`More actions for ${m.title}`}>
+            {players > 1 && readable && (
+              <MenuItem icon="users" onClick={guarded(() => navigate(`#/party/${id}`))}>Play together on this device</MenuItem>
+            )}
             {book.source != null && <MenuItem icon="edit" onClick={() => navigate(`#/write/${id}`)}>Edit</MenuItem>}
             <MenuItem icon="export" onClick={onExport}>Export</MenuItem>
             {canLock && (
