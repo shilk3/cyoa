@@ -19,6 +19,13 @@ Everything runs in the browser. Books are stored on your device in IndexedDB, an
 - A stats panel showing the story's variables
 - Supports images, chapters, page clears and endings marked with tags
 
+**Multiplayer books**
+- A book can be written for several players (see *Writing multiplayer books* below). Each choice belongs to one character, and the characters' names are filled in from what the players chose.
+- **Play together on this device** (pass-and-play): rename the characters, list who's playing and who plays whom, and the app says whose turn each choice is.
+- **Play online with friends**: create a game, share the 6-character code or invite link, and each person plays on their own device. Players claim characters in the lobby; nobody can go past a choice until the right player has made it. Waiting phones check for new moves every few seconds and say "Your turn!" when it is.
+- Fewer people than characters can play: unclaimed characters are shared, and each of their choices goes to a randomly picked player (the same pick on every device). Any multiplayer book can also be read solo.
+- Sample: *The Clocktower Heist* (3 players).
+
 **E-book reader** (standard `.epub` files)
 - Turn pages with a swipe, by tapping the left or right edge, with the arrow buttons, or with the arrow keys
 - Switch between page and scroll layout, and change the text size
@@ -63,6 +70,33 @@ EPUB export works by exploring every reachable state of the story. Stories whose
 # class: whisper          style the line
 # ending: good            mark an ending (counted in the library)
 ```
+
+## Writing multiplayer books
+
+```ink
+# players: 3                       // preferred number of players
+VAR player1 = "Wren the Locksmith"  // one name variable per character; the value is the default name
+VAR player2 = "Pike the Lookout"
+VAR player3 = "Sable the Talker"
+
+{player1} picks the lock while {player2} keeps watch.
+# chooser: 2                        // on its own line, before the choices: who makes this choice
+* [{player2}: whistle a warning]
+* [{player2}: stay quiet]
+-
+# chooser: any                      // anyone may choose; online, the first to pick wins
+* [Run]
+* [Hide]
+```
+
+A choice with no `# chooser` tag belongs to whoever chose last (player 1 at the start). Every device replays the same choices with the same random seed, so random text (`{~a|b}`) is the same for everyone.
+
+## Online game server
+
+Online games use a small API in `server/`, deployed to Vercel as the `cyoa-games` project (`npm run build:api` bundles it into `.vercel/output`), with a free Neon Postgres database. The server stores each game's story, names, seed, players and the list of choices, and replays the story to check each choice is made by the right player. Tables are created automatically on first use, and games untouched for 60 days are deleted.
+
+- Database: set `DATABASE_URL` (a Neon connection string) on the Vercel project.
+- Local development: `npm run dev:api` runs the same API on an in-memory Postgres at http://localhost:8787; build or run the app with `VITE_GAME_API=http://localhost:8787`.
 
 ## Using it on your phone
 

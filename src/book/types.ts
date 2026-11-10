@@ -83,3 +83,16 @@ export interface EpubPosition {
 }
 
 export const isEpub = (b: Book) => b.kind === 'epub';
+
+/** An online multiplayer game this device is part of: how to talk to the server, plus the last state seen. */
+export interface OnlineGame {
+  code: string;
+  playerId: string;
+  token: string;
+  title: string;
+  bookId: string;
+  storyJson: string;
+  /** Last known state from the server, so the game shows straight away (and offline). */
+  state: import('../online/api').GameState | null;
+  updated: string;
+}

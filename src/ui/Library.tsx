@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { Book, Progress } from '../book/types';
-import { listBooks, deleteBook, getProgress, getSave, getPosition, putBook } from '../storage/db';
+import { listBooks, deleteBook, getProgress, getSave, getPosition, putBook, listGames } from '../storage/db';
+import type { OnlineGame } from '../book/types';
 import { isEpub } from '../book/types';
 import { playersFromStoryJson } from '../ink/multiplayer';
 import { useObjectUrl } from './hooks';
@@ -27,6 +28,7 @@ export function Library() {
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<Book | null>(null);
+  const [games, setGames] = useState<OnlineGame[]>([]);
   const [dragging, setDragging] = useState(false);
   const [showTheme, setShowTheme] = useState(false);
   const [canLock, setCanLock] = useState(false);
@@ -65,6 +67,7 @@ export function Library() {
   const themeIcon = themePref === 'dark' ? 'moon' : themePref === 'light' ? 'sun' : 'system';
 
   const refresh = useCallback(async () => {
+    setGames(await listGames());
     const books = await listBooks();
     setEntries(
       await Promise.all(
@@ -138,6 +141,7 @@ export function Library() {
 
       <main className="shelf-wrap">
         {error && <p className="error-box">{error}</p>}
+        <OnlineGames games={games} />
         {entries === null ? (
           <p className="loading">Loading…</p>
         ) : entries.length === 0 ? (
@@ -251,6 +255,9 @@ function BookCard({ entry, canLock, guarded, onToggleLock, onExport, onDelete }:
             {players > 1 && readable && (
               <MenuItem icon="users" onClick={guarded(() => navigate(`#/party/${id}`))}>Play together on this device</MenuItem>
             )}
+            {players > 1 && readable && (
+              <MenuItem icon="users" onClick={guarded(() => navigate(`#/online/${id}`))}>Play online with friends</MenuItem>
+            )}
             {book.source != null && <MenuItem icon="edit" onClick={() => navigate(`#/write/${id}`)}>Edit</MenuItem>}
             <MenuItem icon="export" onClick={onExport}>Export</MenuItem>
             {canLock && (
@@ -267,6 +274,35 @@ function BookCard({ entry, canLock, guarded, onToggleLock, onExport, onDelete }:
         </div>
       </div>
     </li>
+  );
+}
+
+const STATUS: Record<string, string> = { lobby: 'Waiting to start', playing: 'In progress', ended: 'Finished' };
+
+/** Online games on this device, plus a way to join one with a code. */
+function OnlineGames({ games }: { games: OnlineGame[] }) {
+  return (
+    <section className="online-games">
+      <div className="online-head">
+        <h2>Online games</h2>
+        <button className="btn small" onClick={() => navigate('#/join')}>Join a game</button>
+      </div>
+      {games.length > 0 && (
+        <ul>
+          {games.map((g) => (
+            <li key={g.code}>
+              <button className="game-row" onClick={() => navigate(`#/game/${g.code}`)}>
+                <strong>{g.title}</strong>
+                <span className="muted small">
+                  {g.code} · {STATUS[g.state?.game.status ?? 'lobby']}
+                  {g.state ? ` · ${g.state.game.players.map((p) => p.name).join(', ')}` : ''}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

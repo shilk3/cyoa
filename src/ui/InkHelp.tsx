@@ -44,6 +44,22 @@ You have {gold} gold coins.
 The guard {shrugs|sighs|ignores you}.`,
   },
   {
+    title: 'Multiplayer books',
+    body: 'Say how many players the book is for, give each character a name variable (the value is the default name; players can rename them), and tag each choice with who makes it. A choice without a tag goes to whoever chose last. Any book can still be read solo, and fewer people than characters can play: spare characters are shared, with each of their choices going to a random player.',
+    code: `# players: 2
+VAR player1 = "Captain Mara"
+VAR player2 = "The Stranger"
+
+{player1} looks at {player2}.
+# chooser: 2
+* [{player2}: tell the truth]
+* [{player2}: lie]
+- 
+# chooser: any
+* [Run!]
+* [Hide!]`,
+  },
+  {
     title: 'Reader tags',
     body: 'Tags start with # and control how this app presents the story.',
     code: `# title: My Book        (top of file)

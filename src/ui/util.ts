@@ -52,3 +52,20 @@ export function pickFiles(accept: string, multiple = false): Promise<File[]> {
     input.click();
   });
 }
+
+/** The name this person last used in an online game, remembered on this device. */
+export function rememberedName(): string {
+  try {
+    return localStorage.getItem('inkbook:my-name') ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function rememberName(name: string): void {
+  try {
+    localStorage.setItem('inkbook:my-name', name.trim());
+  } catch {
+    // Only a convenience.
+  }
+}

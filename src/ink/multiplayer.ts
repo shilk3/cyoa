@@ -123,6 +123,16 @@ export function whoChooses(seating: Seating, chooser: Chooser, seed: number, tur
   return { role: chooser, person: hashPick(seed, turn, n), random: true };
 }
 
+/**
+ * Online seating, computed the same way on every device and the server: people in seat order,
+ * each character owned by whoever claimed it, unclaimed characters shared.
+ */
+export function seatingFor(players: { name: string; roles: number[] }[], roleCount: number): Seating {
+  const owners: (number | null)[] = Array.from({ length: roleCount }, () => null);
+  players.forEach((p, i) => p.roles.forEach((r) => (owners[r - 1] = i)));
+  return { people: players.map((p) => p.name), owners };
+}
+
 /** Character i goes to person i; characters beyond the number of people are shared. */
 export function defaultSeating(players: number, people: string[]): Seating {
   return { people, owners: Array.from({ length: players }, (_, i) => (i < people.length ? i : null)) };
