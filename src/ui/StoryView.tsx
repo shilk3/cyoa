@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import type { Choice } from '../ink/engine';
 import type { TranscriptEntry } from '../book/types';
 import { parseTag } from '../ink/tags';
@@ -11,6 +11,10 @@ interface Props {
   assetUrls: Record<string, string>;
   onChoose: (index: number) => void;
   onRestart?: () => void;
+  /** Multiplayer: shown above the choices (whose turn it is). */
+  choicesHeader?: ReactNode;
+  /** Multiplayer: someone else is choosing, so the choices are shown but can't be tapped. */
+  choicesDisabled?: boolean;
   /** Scrolls the newest content into view after each choice. */
   scrollContainer?: React.RefObject<HTMLElement | null>;
 }
@@ -23,7 +27,7 @@ function pageStart(transcript: TranscriptEntry[]): number {
   return 0;
 }
 
-export function StoryView({ transcript, choices, ended, ending, assetUrls, onChoose, onRestart, scrollContainer }: Props) {
+export function StoryView({ transcript, choices, ended, ending, assetUrls, onChoose, onRestart, choicesHeader, choicesDisabled, scrollContainer }: Props) {
   const lastChoiceRef = useRef<HTMLParagraphElement | null>(null);
   const start = pageStart(transcript);
   const visible = transcript.slice(start);
@@ -71,10 +75,11 @@ export function StoryView({ transcript, choices, ended, ending, assetUrls, onCho
         );
       })}
 
+      {choices.length > 0 && choicesHeader}
       {choices.length > 0 && (
-        <div className="choices" role="group" aria-label="Choices">
+        <div className={`choices ${choicesDisabled ? 'waiting' : ''}`} role="group" aria-label="Choices">
           {choices.map((c) => (
-            <button key={c.index} className="choice" onClick={() => onChoose(c.index)}>
+            <button key={c.index} className="choice" disabled={choicesDisabled} onClick={() => onChoose(c.index)}>
               {c.text}
             </button>
           ))}

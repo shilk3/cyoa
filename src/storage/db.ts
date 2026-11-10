@@ -1,17 +1,18 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Book, EpubPosition, Progress, SaveGame } from '../book/types';
+import type { Book, EpubPosition, OnlineGame, Progress, SaveGame } from '../book/types';
 
 interface CyoaDB extends DBSchema {
   books: { key: string; value: Book };
   saves: { key: [string, string]; value: SaveGame; indexes: { byBook: string } };
   progress: { key: string; value: Progress };
   positions: { key: string; value: EpubPosition };
+  games: { key: string; value: OnlineGame };
 }
 
 let dbPromise: Promise<IDBPDatabase<CyoaDB>> | null = null;
 
 function db() {
-  dbPromise ??= openDB<CyoaDB>('cyoa-reader', 2, {
+  dbPromise ??= openDB<CyoaDB>('cyoa-reader', 3, {
     upgrade(d, oldVersion) {
       if (oldVersion < 1) {
         d.createObjectStore('books', { keyPath: 'id' });
@@ -20,6 +21,7 @@ function db() {
         d.createObjectStore('progress', { keyPath: 'bookId' });
       }
       if (oldVersion < 2) d.createObjectStore('positions', { keyPath: 'bookId' });
+      if (oldVersion < 3) d.createObjectStore('games', { keyPath: 'code' });
     },
   });
   return dbPromise;
@@ -82,4 +84,21 @@ export async function getPosition(bookId: string): Promise<EpubPosition | undefi
 
 export async function putPosition(pos: EpubPosition): Promise<void> {
   await (await db()).put('positions', pos);
+}
+
+export async function listGames(): Promise<OnlineGame[]> {
+  const games = await (await db()).getAll('games');
+  return games.sort((a, b) => b.updated.localeCompare(a.updated));
+}
+
+export async function getGame(code: string): Promise<OnlineGame | undefined> {
+  return (await db()).get('games', code);
+}
+
+export async function putGame(game: OnlineGame): Promise<void> {
+  await (await db()).put('games', game);
+}
+
+export async function deleteGame(code: string): Promise<void> {
+  await (await db()).delete('games', code);
 }

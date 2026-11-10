@@ -39,6 +39,14 @@ export interface Book {
   locked?: boolean;
 }
 
+/** A pass-and-play game on one device. */
+export interface PartyConfig {
+  names: string[]; // character names
+  people: string[]; // who's playing
+  owners: (number | null)[]; // per character: index into people, or null when shared
+  seed: number;
+}
+
 export interface SaveGame {
   bookId: string;
   slot: string; // "auto" or a user-named slot
@@ -47,6 +55,7 @@ export interface SaveGame {
   transcript: TranscriptEntry[];
   undo: UndoEntry[];
   updated: string;
+  party?: PartyConfig;
 }
 
 export interface TranscriptEntry {
@@ -74,3 +83,16 @@ export interface EpubPosition {
 }
 
 export const isEpub = (b: Book) => b.kind === 'epub';
+
+/** An online multiplayer game this device is part of: how to talk to the server, plus the last state seen. */
+export interface OnlineGame {
+  code: string;
+  playerId: string;
+  token: string;
+  title: string;
+  bookId: string;
+  storyJson: string;
+  /** Last known state from the server, so the game shows straight away (and offline). */
+  state: import('../online/api').GameState | null;
+  updated: string;
+}

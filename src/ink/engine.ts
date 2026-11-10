@@ -56,6 +56,22 @@ export class StoryEngine {
     this.story.ResetState();
   }
 
+  /**
+   * Fixes the random seed and sets global variables. Call straight after reset(), before
+   * continue(): with the same seed and choices, every device produces the same story.
+   * Variables the story doesn't declare are ignored.
+   */
+  configure({ seed, vars }: { seed?: number; vars?: Record<string, string | number | boolean> }): void {
+    if (seed !== undefined) {
+      this.story.state.storySeed = seed;
+      this.story.state.previousRandom = 0;
+    }
+    const vs = this.story.variablesState;
+    for (const [name, value] of Object.entries(vars ?? {})) {
+      if (vs.GlobalVariableExistsWithName(name)) vs.$(name, value);
+    }
+  }
+
   get variables(): Record<string, unknown> {
     const vs = this.story.variablesState;
     const out: Record<string, unknown> = {};

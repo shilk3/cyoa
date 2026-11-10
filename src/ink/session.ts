@@ -1,5 +1,6 @@
 import { StoryEngine, type Choice } from './engine';
 import { findTag } from './tags';
+import { currentChooser, turnNumber, type Chooser } from './multiplayer';
 import type { TranscriptEntry, UndoEntry } from '../book/types';
 
 export interface SessionSnapshot {
@@ -19,12 +20,17 @@ export class ReaderSession {
   transcript: TranscriptEntry[] = [];
   undoStack: UndoEntry[] = [];
 
-  constructor(storyJson: string) {
+  /** `onStart` runs after each reset, before any text: e.g. to set the seed and character names. */
+  private readonly onStart?: (engine: StoryEngine) => void;
+
+  constructor(storyJson: string, onStart?: (engine: StoryEngine) => void) {
     this.engine = new StoryEngine(storyJson);
+    this.onStart = onStart;
   }
 
   start(): void {
     this.engine.reset();
+    this.onStart?.(this.engine);
     this.transcript = [];
     this.undoStack = [];
     this.advance();
@@ -67,6 +73,22 @@ export class ReaderSession {
     this.transcript = [...this.transcript, { kind: 'choice', text: choice.text, tags: choice.tags }];
     this.engine.choose(index);
     this.advance();
+  }
+
+  /** Multiplayer: the character who makes the current choice (from `# chooser:` tags). */
+  get chooser(): Chooser {
+    return currentChooser(this.transcript);
+  }
+
+  /** Number of choices made so far. */
+  get turn(): number {
+    return turnNumber(this.transcript);
+  }
+
+  /** Replays a list of choice indexes from the start (multiplayer catch-up). */
+  replay(choices: number[]): void {
+    this.start();
+    for (const c of choices) this.choose(c);
   }
 
   get canUndo(): boolean {

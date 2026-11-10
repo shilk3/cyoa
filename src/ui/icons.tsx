@@ -18,6 +18,7 @@ const PATHS = {
   system: 'M3 4h18v12H3zM8 20h8M12 16v4',
   lock: 'M5 11h14v10H5zM8 11V7a4 4 0 018 0v4',
   more: 'M5 12h.01M12 12h.01M19 12h.01',
+  users: 'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
   trash: 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6',
   unlock: 'M5 11h14v10H5zM8 11V7a4 4 0 017.75-1.4',
 } as const;

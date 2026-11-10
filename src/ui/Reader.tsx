@@ -1,6 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { isEpub, type Book, type SaveGame } from '../book/types';
+import { isEpub, type Book, type PartyConfig, type SaveGame } from '../book/types';
 import { ReaderSession } from '../ink/session';
+import { StoryEngine } from '../ink/engine';
+import { nameVars, newSeed, partyInfo, whoChooses, type PartyInfo } from '../ink/multiplayer';
+import { PartySetup, type PartyChoice } from './PartySetup';
 import { getBook, getSave, listSaves, putSave, deleteSave, recordEnding } from '../storage/db';
 import { useAssetUrls } from './hooks';
 import { StoryView } from './StoryView';
@@ -14,13 +17,22 @@ import { LayoutPicker } from './LayoutPicker';
 import { useStoredNumber } from './hooks';
 
 const AUTO = 'auto';
+const PARTY = 'party';
 
 // epub.js is only needed for standard e-books.
 const EpubReader = lazy(() => import('./EpubReader').then((m) => ({ default: m.EpubReader })));
 
-export function Reader({ bookId }: { bookId: string }) {
+/**
+ * Reads an ink book. In `party` mode several people share one device (pass-and-play): the book's
+ * characters are assigned to them, and each choice says whose turn it is.
+ */
+export function Reader({ bookId, mode = 'solo' }: { bookId: string; mode?: 'solo' | 'party' }) {
+  const slot = mode === 'party' ? PARTY : AUTO;
   const [book, setBook] = useState<Book | null | undefined>(undefined);
   const sessionRef = useRef<ReaderSession | null>(null);
+  const partyRef = useRef<PartyConfig | null>(null);
+  const [info, setInfo] = useState<PartyInfo | null>(null);
+  const [setup, setSetup] = useState<'none' | 'new' | 'edit'>('none');
   const [, setTick] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -43,8 +55,9 @@ export function Reader({ bookId }: { bookId: string }) {
         storyRevision: book.manifest.storyRevision,
         inkState: snap.inkState,
         transcript: snap.transcript,
-        undo: slot === AUTO ? snap.undo : [],
+        undo: slot === AUTO || slot === PARTY ? snap.undo : [],
         updated: new Date().toISOString(),
+        party: slot === PARTY ? (partyRef.current ?? undefined) : undefined,
       });
     },
     [book],
@@ -57,9 +70,18 @@ export function Reader({ bookId }: { bookId: string }) {
       if (cancelled) return;
       setBook(b ?? null);
       if (!b?.storyJson) return;
-      const s = new ReaderSession(b.storyJson);
+      const engine = new StoryEngine(b.storyJson);
+      setInfo(partyInfo(engine.globalTags, engine.variables));
+      const s = makeSession(b.storyJson);
+      const auto = await getSave(b.id, slot);
+      if (mode === 'party') {
+        if (!auto?.party) {
+          setSetup('new');
+          return;
+        }
+        partyRef.current = auto.party;
+      }
       sessionRef.current = s;
-      const auto = await getSave(b.id, AUTO);
       let restored = false;
       if (auto) {
         try {
@@ -77,19 +99,52 @@ export function Reader({ bookId }: { bookId: string }) {
       } catch (e) {
         setError((e as Error).message);
       }
-      setBookmarks((await listSaves(b.id)).filter((x) => x.slot !== AUTO));
+      setBookmarks((await listSaves(b.id)).filter((x) => x.slot.startsWith('bm:')));
       rerender();
     })();
     return () => {
       cancelled = true;
     };
-  }, [bookId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId, mode]);
+
+  /** A session that applies the party's seed and character names each time it starts. */
+  function makeSession(storyJson: string) {
+    return new ReaderSession(storyJson, (e) => {
+      const p = partyRef.current;
+      if (p) e.configure({ seed: p.seed, vars: nameVars(p.names) });
+    });
+  }
+
+  const startParty = async (c: PartyChoice) => {
+    if (!book?.storyJson) return;
+    if (setup === 'edit' && partyRef.current) {
+      // Changing who plays whom mid-game; the story so far stays as it is.
+      partyRef.current = { ...partyRef.current, people: c.seating.people, owners: c.seating.owners };
+      setSetup('none');
+      await persist(PARTY);
+      rerender();
+      return;
+    }
+    partyRef.current = { names: c.names, people: c.seating.people, owners: c.seating.owners, seed: newSeed() };
+    const s = makeSession(book.storyJson);
+    sessionRef.current = s;
+    try {
+      s.start();
+      setError(null);
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setSetup('none');
+    await persist(PARTY);
+    rerender();
+  };
 
   const s = sessionRef.current;
 
   const afterMove = async () => {
     rerender();
-    await persist(AUTO);
+    await persist(slot);
     const ending = sessionRef.current?.ending;
     if (ending && book) await recordEnding(book.id, ending);
   };
@@ -113,6 +168,8 @@ export function Reader({ bookId }: { bookId: string }) {
   const restart = () => {
     if (!s) return;
     if (s.transcript.some((e) => e.kind === 'choice') && !s.ended && !confirm('Start again from the beginning?')) return;
+    // A fresh game gets fresh random events.
+    if (partyRef.current) partyRef.current = { ...partyRef.current, seed: newSeed() };
     try {
       s.start();
       setError(null);
@@ -127,7 +184,7 @@ export function Reader({ bookId }: { bookId: string }) {
     const name = prompt('Name this bookmark', `Bookmark ${bookmarks.length + 1}`);
     if (!name || !book) return;
     await persist(`bm:${name}`);
-    setBookmarks((await listSaves(book.id)).filter((x) => x.slot !== AUTO));
+    setBookmarks((await listSaves(book.id)).filter((x) => x.slot.startsWith('bm:')));
   };
 
   const loadBookmark = (bm: SaveGame) => {
@@ -145,7 +202,7 @@ export function Reader({ bookId }: { bookId: string }) {
   const removeBookmark = async (bm: SaveGame) => {
     if (!book) return;
     await deleteSave(book.id, bm.slot);
-    setBookmarks((await listSaves(book.id)).filter((x) => x.slot !== AUTO));
+    setBookmarks((await listSaves(book.id)).filter((x) => x.slot.startsWith('bm:')));
   };
 
   if (book === undefined) return <div className="loading">Loading…</div>;
@@ -166,6 +223,33 @@ export function Reader({ bookId }: { bookId: string }) {
     );
   }
 
+  if (setup !== 'none' && info) {
+    const p = partyRef.current;
+    return (
+      <div className="reader">
+        <div className="top-bar">
+          <header className="toolbar">
+            <LibraryButton />
+            <h1 className="toolbar-title">{book.manifest.title}</h1>
+          </header>
+        </div>
+        <main className="page">
+          <PartySetup
+            info={info}
+            title={setup === 'new' ? 'Play together on this device' : 'Players'}
+            initial={p ? { names: p.names, seating: { people: p.people, owners: p.owners } } : undefined}
+            lockNames={setup === 'edit'}
+            startLabel={setup === 'new' ? 'Start the story' : 'Save'}
+            onStart={startParty}
+            onCancel={() => (setup === 'edit' ? setSetup('none') : navigate('#/'))}
+          />
+        </main>
+      </div>
+    );
+  }
+
+  const turnHeader = s && info ? <TurnBanner session={s} info={info} party={mode === 'party' ? partyRef.current : null} /> : null;
+
   return (
     <div className="reader">
       <div className="top-bar">
@@ -175,7 +259,11 @@ export function Reader({ bookId }: { bookId: string }) {
           <div className="toolbar-actions">
             <ToolButton icon="undo" label="Back" onClick={undo} disabled={!s?.canUndo} />
             <ToolButton icon="restart" label="Restart" onClick={restart} disabled={!s} />
-            <ToolButton icon="bookmark" label="Bookmarks" active={panel === 'bookmarks'} onClick={() => togglePanel('bookmarks')} />
+            {mode === 'party' ? (
+              <ToolButton icon="users" label="Players" onClick={() => setSetup('edit')} />
+            ) : (
+              <ToolButton icon="bookmark" label="Bookmarks" active={panel === 'bookmarks'} onClick={() => togglePanel('bookmarks')} />
+            )}
             <ToolButton icon="stats" label="Stats" active={panel === 'stats'} onClick={() => togglePanel('stats')} />
             <ToolButton icon="display" label="Display" active={panel === 'display'} onClick={() => togglePanel('display')} />
             {book.source != null && <ToolButton icon="edit" label="Edit" onClick={() => navigate(`#/write/${encodeURIComponent(book.id)}`)} />}
@@ -240,6 +328,7 @@ export function Reader({ bookId }: { bookId: string }) {
                 assetUrls={assetUrls}
                 onChoose={choose}
                 onRestart={restart}
+                choicesHeader={turnHeader}
               />
             )}
             {error && (
@@ -251,6 +340,35 @@ export function Reader({ bookId }: { bookId: string }) {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+/** Whose choice it is. Solo readers of a multiplayer book just see which character is choosing. */
+function TurnBanner({ session, info, party }: { session: ReaderSession; info: PartyInfo; party: PartyConfig | null }) {
+  if (info.players <= 1 && !party) return null;
+  const names = party?.names ?? info.names;
+  const roleName = (r: number) => names[r - 1] ?? `Player ${r}`;
+  const chooser = session.chooser;
+  if (!party || party.people.length <= 1) {
+    return <p className="turn-banner small-banner">{chooser === 'any' ? 'Anyone’s choice' : `${roleName(chooser)}’s choice`}</p>;
+  }
+  const turn = whoChooses({ people: party.people, owners: party.owners }, chooser, party.seed, session.turn);
+  if (turn.person === 'anyone') {
+    return (
+      <div className="turn-banner" aria-live="polite">
+        <strong>Anyone</strong>
+        <span>can make this choice</span>
+      </div>
+    );
+  }
+  return (
+    <div className="turn-banner" aria-live="polite">
+      <strong>{party.people[turn.person]}</strong>
+      <span>
+        choose for {turn.role ? roleName(turn.role) : 'everyone'}
+        {turn.random && <em> (shared character, picked at random)</em>}
+      </span>
     </div>
   );
 }
