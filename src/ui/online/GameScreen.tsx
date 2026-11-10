@@ -256,6 +256,11 @@ export function GameScreen({ code }: { code: string }) {
                         <strong>Anyone</strong>
                         <span>can make this choice — first to pick wins</span>
                       </>
+                    ) : myTurn && busy ? (
+                      <>
+                        <strong>Sending your choice…</strong>
+                        <span>the others will see it in a moment</span>
+                      </>
                     ) : myTurn ? (
                       <>
                         <strong>Your turn</strong>
