@@ -69,7 +69,7 @@ function LockScreen({ bookId }: { bookId: string }) {
         {error && (
           <>
             <p className="error-box">{error}</p>
-            <p className="muted small">If Face ID keeps failing, for example after deleting the Inkbook passkey from Passwords:</p>
+            <p className="muted small">If Face ID keeps failing, for example after deleting the Pagefork passkey from Passwords:</p>
             <button className="btn small" onClick={reset}>Set up Face ID again</button>
           </>
         )}

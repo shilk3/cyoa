@@ -106,7 +106,7 @@ export function GameScreen({ code }: { code: string }) {
     }
     document.title = myTurn ? `● Your turn · ${st.game.title}` : st.game.title;
     return () => {
-      document.title = 'Inkbook';
+      document.title = 'Pagefork';
     };
   }, [myTurn, st]);
 
@@ -308,7 +308,7 @@ function Lobby({
   return (
     <div className="lobby">
       <h2>{g.title}</h2>
-      <p className="muted">Invite friends with this code or link. Everyone needs the Inkbook app open in their browser.</p>
+      <p className="muted">Invite friends with this code or link. Friends open the link in their browser; no install needed.</p>
       <div className="code-box">
         <span className="game-code">{g.code}</span>
         <button className="btn primary" onClick={onShare}>Share invite</button>
@@ -357,10 +357,10 @@ function Lobby({
 
 async function shareInvite(code: string, title: string) {
   const url = inviteLink(code);
-  const text = `Join my Inkbook game "${title}". Game code: ${code}`;
+  const text = `Join my Pagefork game "${title}". Game code: ${code}`;
   try {
     if (navigator.share) {
-      await navigator.share({ title: `Inkbook: ${title}`, text, url });
+      await navigator.share({ title: `Pagefork: ${title}`, text, url });
       return;
     }
   } catch (e) {

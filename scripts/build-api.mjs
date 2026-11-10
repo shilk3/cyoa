@@ -21,7 +21,7 @@ await build({
   banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" },
 });
 
-await writeFile(`${fn}/.vc-config.json`, JSON.stringify({ runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false }));
-await writeFile(`${out}/static/index.html`, '<!doctype html><title>Inkbook game server</title><p>Inkbook game server. The app is at <a href="https://shilk3.github.io/cyoa/">shilk3.github.io/cyoa</a>.</p>');
+await writeFile(`${fn}/.vc-config.json`, JSON.stringify({ runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: false, regions: ['syd1'] }));
+await writeFile(`${out}/static/index.html`, '<!doctype html><title>Pagefork game server</title><p>Pagefork game server. The app is at <a href="https://shilk3.github.io/cyoa/">shilk3.github.io/cyoa</a>.</p>');
 await writeFile(`${out}/config.json`, JSON.stringify({ version: 3 }));
 console.log('Built', fn);

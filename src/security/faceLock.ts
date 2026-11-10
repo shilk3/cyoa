@@ -72,8 +72,8 @@ export async function setUpLock(): Promise<void> {
   try {
     const cred = (await navigator.credentials.create({
       publicKey: {
-        rp: { name: 'Inkbook' },
-        user: { id: random(16), name: 'Inkbook locked books', displayName: 'Inkbook locked books' },
+        rp: { name: 'Pagefork' },
+        user: { id: random(16), name: 'Pagefork locked books', displayName: 'Pagefork locked books' },
         challenge: random(32),
         pubKeyCredParams: [
           { type: 'public-key', alg: -7 },
