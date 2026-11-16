@@ -93,6 +93,8 @@ VAR player3 = "Sable the Talker"
 
 A choice with no `# chooser` tag belongs to whoever chose last (player 1 at the start). Every device replays the same choices with the same random seed, so random text (`{~a|b}`) is the same for everyone.
 
+**Writing books with an AI chatbot:** give [docs/WRITING-BOOKS-WITH-AI.md](docs/WRITING-BOOKS-WITH-AI.md) to any chatbot along with a topic and number of players, save its reply as a `.ink` file, and import it. The brief's example book is checked by the test suite.
+
 ## Online game server
 
 Online games use a small API in `server/`, deployed to Vercel as the `cyoa-games` project (`npm run build:api` bundles it into `.vercel/output`), with a free Neon Postgres database. The server stores each game's story, names, seed, players and the list of choices, and replays the story to check each choice is made by the right player. Tables are created automatically on first use, and games untouched for 60 days are deleted.
